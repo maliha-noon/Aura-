@@ -1,36 +1,38 @@
-# Laravel API Starter Template
+# Full-Stack Project Starter Template
 
-This is a **Laravel API-only starter template** intended for students to build their own projects. 
-
-The backend is fully prepared for RESTful API development, and students are expected to create a frontend separately in a `client` folder.
+This is a **full-stack starter template** for students to build their projects.  
+It has a structured folder setup with separate **client**, **server**, and **database** directories, making it easy to organize your application logic and development workflow.
 
 ---
 
-## Features
+## Project Structure
 
-- Laravel 10 backend
-- API routes only (no Blade templates)
-- Sanctum authentication setup (optional)
-- Ready for React or other frontend clients
-- Example routes and controllers to get started
+project-root/
+├── client/ # Frontend application (React, Vue, etc.)
+├── server/ # Backend application (Laravel, Node.js, etc.)
+└── database/ # Database migrations, seeders, or SQL scripts
+
+
+- **client**: Your frontend code, responsible for UI and API requests.
+- **server**: The backend code (Laravel API in this template) handling business logic and serving API endpoints.
+- **database**: Database schema, migrations, and seed data.
 
 ---
 
 ## Prerequisites
 
-Make sure you have the following installed:
+Make sure the following are installed:
 
-- PHP >= 8.1
+- PHP >= 8.1 (for Laravel backend)
 - Composer
+- Node.js >= 18
+- npm or Yarn
 - MySQL / PostgreSQL / SQLite
-- Node.js and npm/yarn (for the frontend client)
 
 ---
 
-## Installation
-
-1. **Clone the repository**
+## Setup Instructions
 
 ```bash
 git clone <repository-url>
-cd <project-folder>
+cd project-root
