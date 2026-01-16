@@ -4,8 +4,8 @@
 
 ## **Team Members**
 
-| **Maliha Pervin** | 20230104077 | parvinmaliha26@gmail.com | Lead |
-| **Ohidur Rahman Rifat** | 20230104090 | rifator44@gmail.com | Backend, Frontend |
+| **Maliha Pervin** | 20230104077 | parvinmaliha26@gmail.com | Backend,Frontend|
+| **Ohidur Rahman Rifat** | 20230104090 | rifator44@gmail.com | Lead, Backend |
 | **Hisham Mhamhud** | 20230104096 | hishammd123545@gmail.com | Backend, Frontend |
 
 ---
@@ -134,5 +134,4 @@ git branch -M main
 git remote add origin <YOUR_GITHUB_REPO_URL>
 git push -u origin main
 
-# 6. Optional: Invite instructor (requires GitHub CLI)
-gh repo invite aliahnaf327@gmail.com
+
