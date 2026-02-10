@@ -4,9 +4,10 @@
 
 ## **Team Members**
 
-| **Maliha Pervin** | 20230104077 | parvinmaliha26@gmail.com | Backend,Frontend|
+| **Maliha Pervin** | 20230104077 | parvinmaliha26@gmail.com | Frontend|
 | **Ohidur Rahman Rifat** | 20230104090 | rifator44@gmail.com | Lead, Backend |
 | **Hisham Mhamhud** | 20230104096 | hishammd123545@gmail.com | Backend, Frontend |
+| **Umme Mohosina** | 20210204043 | mohosinashikha@gmail.com | Backend, Frontend |
 
 ---
 
