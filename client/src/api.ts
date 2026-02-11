@@ -8,68 +8,127 @@ class ApiClient {
   constructor() {
     this.client = axios.create({
       baseURL: secrets.backendEndpoint,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
     });
-  }
 
-  // currently, only fetches 1 session greater than current time
-  async getSession() {
-    try {
-      const response = await this.client.get('/api/session');
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-    }
-  }
-
-  async createSession(name: string, duration: number, username: string, password: string) {
-    try {
-      if (!username || !password) {
-        toast.error('Credentials are required');
-        return;
+    // Add interceptor to inject Bearer token
+    this.client.interceptors.request.use((config) => {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
-      const response = await this.client.post('/api/session', { name, duration, username, password });
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
+      return config;
+    });
+  }
+
+  async login(email: string, password: string) {
+    try {
+      const response = await this.client.post('/api/login', { email, password });
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      let message = error.response?.data?.message || error.message || 'Login failed';
+      if (error.response?.status === 429) {
+        message = 'Too many attempts. Please wait 1 minute.';
+      }
+      return {
+        success: false,
+        message,
+        status: error.response?.status || (error.code === 'ERR_NETWORK' ? 'Network Error' : 'Unknown')
+      };
     }
   }
 
-  async updateSession(session_id: number, active: boolean, username: string, password: string) {
+  async register(name: string, email: string, phone: string, password: string, password_confirmation: string) {
     try {
-      if (!username || !password) {
-        toast.error('Credentials are required');
-        return;
+      const response = await this.client.post('/api/register', {
+        name, email, phone, password, password_confirmation
+      });
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      let message = error.response?.data?.message || error.message || 'Registration failed';
+
+      if (error.response?.status === 429) {
+        message = 'Too many attempts. Please wait 1 minute before trying again.';
+      } else if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        message = Object.values(errors).flat().join(' ');
       }
 
-      const response = await this.client.put('/api/session', { session_id, active, username, password });
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
+      return {
+        success: false,
+        message,
+        status: error.response?.status || (error.code === 'ERR_NETWORK' ? 'Network Error' : 'Unknown')
+      };
     }
   }
 
-  async submitAttendance(roll: number) {
+  async googleLogin(email?: string, name?: string) {
     try {
-      const response = await this.client.post('/api/attendance', { roll });
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-    }
-  }
-
-  async viewSessions(username: string, password: string) {
-    try {
-      if (!username || !password) {
-        toast.error('Credentials are required');
-        return;
+      if (!email || email.trim() === '') {
+        toast.error("Please enter your Gmail address first!");
+        return { success: false, message: 'Gmail required' };
       }
-      const response = await this.client.post('/api/sessions', { username, password });
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
+
+      const targetEmail = email.trim();
+      const isAdmin = targetEmail === 'rahator44@gmail.com';
+
+      // Derive a name from the email handle if none provided (e.g. "rifat" from "rifat@gmail.com")
+      const emailHandle = targetEmail.split('@')[0];
+      const derivedName = emailHandle.charAt(0).toUpperCase() + emailHandle.slice(1);
+
+      const mockGoogleUser = {
+        name: name || (isAdmin ? 'Admin Rifat' : derivedName),
+        email: targetEmail,
+        provider_id: `google_${emailHandle}`,
+      };
+
+      // Send to backend to create/login user
+      const response = await this.client.post('/api/social-login', mockGoogleUser);
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      let message = error.response?.data?.message || error.message || 'Google Login failed';
+      if (error.response?.status === 429) {
+        message = 'Too many attempts. Please wait 1 minute.';
+      }
+      return {
+        success: false,
+        message,
+        status: error.response?.status || (error.code === 'ERR_NETWORK' ? 'Network Error' : 'Unknown')
+      };
+    }
+  }
+
+  async forgotPassword(email: string) {
+    try {
+      const response = await this.client.post('/api/forgot-password', { email });
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to send reset code',
+        status: error.response?.status
+      };
+    }
+  }
+
+  async resetPassword(data: any) {
+    try {
+      const response = await this.client.post('/api/reset-password', data);
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to reset password',
+        status: error.response?.status
+      };
     }
   }
 
@@ -87,6 +146,48 @@ class ApiClient {
     }
 
     toast.error(error.message || 'Something went wrong');
+  }
+
+  // --- Admin Methods ---
+
+  async getAdminStats() {
+    try {
+      const response = await this.client.get('/api/admin/stats');
+      return { success: true, data: response.data.stats };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch stats' };
+    }
+  }
+
+  async getAdminUsers() {
+    try {
+      const response = await this.client.get('/api/admin/users');
+      return { success: true, data: response.data.users };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch users' };
+    }
+  }
+
+  async toggleUserStatus(userId: number) {
+    try {
+      const response = await this.client.post(`/api/admin/users/${userId}/toggle`);
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to update user' };
+    }
+  }
+
+  async deleteUser(userId: number) {
+    try {
+      const response = await this.client.delete(`/api/admin/users/${userId}`);
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to suspend user' };
+    }
   }
 }
 

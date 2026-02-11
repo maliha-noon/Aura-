@@ -17,8 +17,8 @@ use Illuminate\Support\Facades\Route;
 //     return ['Laravel' => app()->version()];
 // });
 
-Route::get('{any}', function () {
+Route::get('/', function () {
     return file_get_contents(public_path('index.html'));
-})->where('any', '.*');
+});
 
 require __DIR__ . '/auth.php';

@@ -1,109 +1,98 @@
-import { useEffect, useState } from 'react';
-import { Button, Form } from 'react-bootstrap';
-import ApiClient from '../api';
-import toast from 'react-hot-toast';
-import { calculateAttendanceMarks, totalMarksPerDay } from '../helpers/util';
-
-const convertToHm = (seconds: number | undefined) => {
-  if (!seconds) return '0';
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-};
-
-interface SessionInfo {
-  timeRemaining: number; // in seconds
-  name: string;
-  duration?: string;
-  created_at?: string;
-}
-
-const apiClient = new ApiClient();
+import { Button, Container, Row, Col, Card } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
-  const [rollValue, setRollValue] = useState('');
-  const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
-
-  useEffect(() => {
-    // api call to get sessionInfo
-    // 1 session will be running at a time
-    const getSession = async () => {
-      const session = await apiClient.getSession();
-      console.log(session);
-
-      if (session.success) {
-        setSessionInfo({
-          ...session,
-          timeRemaining: session.timeRemaining * 60,
-          name: session.name,
-        });
-      }
-    };
-
-    getSession();
-  }, []);
-
-  // Decrement timeRemaining every second
-  useEffect(() => {
-    if (sessionInfo && sessionInfo.timeRemaining <= 0) return;
-
-    const timer = setInterval(() => {
-      setSessionInfo((p) => {
-        if (!p) return null;
-        return {
-          ...p,
-          timeRemaining: p.timeRemaining - 1,
-        };
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [sessionInfo?.timeRemaining]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const res = await apiClient.submitAttendance(parseInt(rollValue));
-    console.log('res', res);
-
-    console.log('sessionInfo', sessionInfo);
-
-    if (res.success && sessionInfo) {
-      const attendanceMarks = calculateAttendanceMarks(res.attendance.created_at, sessionInfo.duration!, sessionInfo.created_at!);
-      toast.success(`Obtained marks: ${attendanceMarks} out of ${totalMarksPerDay}`, {
-        duration: 5000,
-      });
-    } else {
-      toast.error(res.message);
-    }
-
-    setRollValue('');
-  };
+  const navigate = useNavigate();
 
   return (
-    <div className="pt-4 d-flex justify-content-around items-center">
-      {!sessionInfo && <p className="text-3xl font-light fs-4">No active session found</p>}
-      {sessionInfo && (
-        <div className="w-lg-400">
-          <div className="text-center">
-            <h2 className="text-sm font-medium text-muted-foreground mb-2">Session</h2>
-            <p className="text-3xl font-light fs-4">{sessionInfo?.name}</p>
+    <div className="home-page">
+      {/* Hero Section */}
+      <section className="hero-section text-center d-flex align-items-center position-relative animate-fade-in" style={{
+        minHeight: '80vh',
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.9)), url("https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <Container className="position-relative z-1">
+          <Row className="justify-content-start text-start">
+            <Col lg={8}>
+              <h1 className="display-3 fw-bold mb-2 animate-fade-in-up">Experience the</h1>
+              <h1 className="display-3 fw-bold text-red mb-3 animate-fade-in-up delay-100">Ultimate</h1>
+              <h1 className="display-3 fw-bold mb-4 animate-fade-in-up delay-200">Event Experience</h1>
+              <p className="lead mb-5 text-light animate-fade-in-up delay-300" style={{ maxWidth: '600px' }}>
+                Book your tickets to the most exclusive events, concerts, and festivals.
+                Join thousands of fans experiencing unforgettable moments with AURA++.
+              </p>
+              <div className="d-flex gap-3 animate-fade-in-up delay-400">
+                <Button variant="danger" size="lg" className="btn-primary-custom px-4 py-2 hover-scale">
+                  Explore Events
+                </Button>
+                <Button variant="outline-light" size="lg" className="px-4 py-2 hover-scale">
+                  Learn More
+                </Button>
+              </div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+
+      {/* Features Section */}
+      <section className="features-section py-5 bg-black">
+        <Container className="py-5">
+          <div className="text-center mb-5 animate-fade-in-up delay-500">
+            <h2 className="display-5 fw-bold mb-3">Why Choose <span className="text-red">AURA++</span></h2>
+            <p className="text-red fs-5">The ultimate platform for event enthusiasts</p>
           </div>
-          <div className="text-center">
-            <h2 className="text-sm font-medium text-muted-foreground mb-2">Remaining</h2>
-            <p className="text-3xl font-light fs-4">{convertToHm(sessionInfo?.timeRemaining)}</p>
-          </div>
-          <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-            <Form.Control type="number" placeholder="Enter roll" value={rollValue} onChange={(e) => setRollValue(e.target.value)} className="w-full text-center border-2" />
-            <div className="d-grid gap-2 mt-3">
-              <Button variant="primary" onClick={handleSubmit}>
-                Submit
-              </Button>
-            </div>
-          </Form.Group>
-        </div>
-      )}
+
+          <Row className="g-4">
+            <Col md={4} className="animate-fade-in-up delay-100">
+              <Card className="card-custom h-100 text-white hover-scale">
+                <Card.Body>
+                  <div className="display-4 mb-3 hover-rotate" style={{ display: 'inline-block' }}>🎭</div>
+                  <Card.Title className="h4 mb-3">Exclusive Events</Card.Title>
+                  <Card.Text className="text-red">
+                    Access to the hottest concerts, festivals, and exclusive gatherings
+                  </Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={4} className="animate-fade-in-up delay-200">
+              <Card className="card-custom h-100 text-white hover-scale">
+                <Card.Body>
+                  <div className="display-4 text-warning mb-3 hover-rotate" style={{ display: 'inline-block' }}>⚡</div>
+                  <Card.Title className="h4 mb-3">Instant Booking</Card.Title>
+                  <Card.Text className="text-red">
+                    Book your tickets instantly with our seamless checkout process
+                  </Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={4} className="animate-fade-in-up delay-300">
+              <Card className="card-custom h-100 text-white hover-scale">
+                <Card.Body>
+                  <div className="display-4 text-success mb-3 hover-rotate" style={{ display: 'inline-block' }}>🔒</div>
+                  <Card.Title className="h4 mb-3">Secure Payment</Card.Title>
+                  <Card.Text className="text-red">
+                    Safe and secure payment options for your peace of mind
+                  </Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+
+      {/* CTA Section */}
+      <section className="cta-section py-5 text-center" style={{ background: 'linear-gradient(to right, #4a000a, #000000)' }}>
+        <Container className="py-5 animate-fade-in-up">
+          <h2 className="display-5 fw-bold mb-3">Ready to Experience the Aura?</h2>
+          <p className="lead mb-4 text-light">Join thousands of event-goers and create unforgettable memories</p>
+          <Button variant="light" size="lg" className="px-5 py-3 fw-bold text-dark hover-scale animate-pulse" onClick={() => navigate('/register')}>
+            Get Started Now
+          </Button>
+        </Container>
+      </section>
     </div>
   );
 }
