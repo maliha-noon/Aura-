@@ -1,33 +1,36 @@
+CREATE DATABASE IF NOT EXISTS `cse_3100`;
+USE `cse_3100`;
+
+SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `bookings`;
 DROP TABLE IF EXISTS `events`;
 DROP TABLE IF EXISTS `personal_access_tokens`;
 DROP TABLE IF EXISTS `users`;
-DROP TABLE IF EXISTS `attendances`;
-DROP TABLE IF EXISTS `sessions`;
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- Users Table
 CREATE TABLE `users` (
-    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(255) NOT NULL,
     `email` VARCHAR(255) NOT NULL UNIQUE,
     `phone` VARCHAR(20),
-    `email_verified_at` TIMESTAMP,
+    `email_verified_at` TIMESTAMP NULL,
     `password` VARCHAR(255) NOT NULL,
     `provider` VARCHAR(255),
     `provider_id` VARCHAR(255),
     `role` VARCHAR(255) DEFAULT 'user',
     `avatar` VARCHAR(255),
-    `last_login_at` TIMESTAMP,
-    `is_active` INTEGER DEFAULT 1,
+    `last_login_at` TIMESTAMP NULL,
+    `is_active` TINYINT(1) DEFAULT 1,
     `remember_token` VARCHAR(100),
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `deleted_at` TIMESTAMP
-);
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` TIMESTAMP NULL
+) ENGINE=InnoDB;
 
 -- Events Table
 CREATE TABLE `events` (
-    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `title` VARCHAR(255) NOT NULL,
     `description` TEXT NOT NULL,
     `date` TIMESTAMP NOT NULL,
@@ -36,30 +39,19 @@ CREATE TABLE `events` (
     `price` DECIMAL(8, 2) NOT NULL,
     `capacity` INTEGER NOT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
 
 -- Bookings Table
 CREATE TABLE `bookings` (
-    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-    `user_id` INTEGER NOT NULL,
-    `event_id` INTEGER NOT NULL,
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id` BIGINT UNSIGNED NOT NULL,
+    `event_id` BIGINT UNSIGNED NOT NULL,
     `quantity` INTEGER NOT NULL,
     `total_price` DECIMAL(10, 2) NOT NULL,
     `status` VARCHAR(255) DEFAULT 'confirmed',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE
-);
-
--- Legacy Tables (Optional, keeping for compatibility if needed)
-CREATE TABLE `sessions` (
-    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-    `name` VARCHAR(255) NOT NULL,
-    `duration` INTEGER NOT NULL,
-    `active` BOOLEAN DEFAULT 1,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
+) ENGINE=InnoDB;

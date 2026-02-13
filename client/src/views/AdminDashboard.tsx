@@ -28,14 +28,18 @@ const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState<Stats | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         console.log("[ADMIN] useEffect triggered");
         fetchDashboardData();
     }, []);
 
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = async (isManual = false) => {
         console.log("[ADMIN] Fetching data...");
+        if (isManual) setRefreshing(true);
+        else setLoading(true);
+
         try {
             const [statsRes, usersRes] = await Promise.all([
                 api.getAdminStats(),
@@ -45,13 +49,24 @@ const AdminDashboard: React.FC = () => {
             console.log("[ADMIN] Stats Response:", statsRes);
             console.log("[ADMIN] Users Response:", usersRes);
 
-            if (statsRes.success) setStats(statsRes.data || null);
-            if (usersRes.success) setUsers(usersRes.data || []);
-        } catch (err) {
+            if (statsRes.success) {
+                setStats(statsRes.data || null);
+            } else {
+                toast.error("Format error in stats response");
+            }
+
+            if (usersRes.success) {
+                setUsers(usersRes.data || []);
+                if (isManual) toast.success("Dashboard data refreshed!");
+            } else {
+                toast.error(`Fetch Users Error: ${usersRes.message || 'Unknown error'}`);
+            }
+        } catch (err: any) {
             console.error("[ADMIN] Data Fetch Error:", err);
-            toast.error("Failed to load dashboard data");
+            toast.error(`Network Error: ${err.message || "Failed to load dashboard data"}`);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -59,7 +74,7 @@ const AdminDashboard: React.FC = () => {
         const res = await api.toggleUserStatus(userId);
         if (res.success) {
             toast.success(res.message);
-            fetchDashboardData();
+            fetchDashboardData(true);
         } else {
             toast.error(res.message);
         }
@@ -70,14 +85,14 @@ const AdminDashboard: React.FC = () => {
             const res = await api.deleteUser(userId);
             if (res.success) {
                 toast.success(res.message);
-                fetchDashboardData();
+                fetchDashboardData(true);
             } else {
                 toast.error(res.message);
             }
         }
     };
 
-    if (loading) {
+    if (loading && !refreshing) {
         return (
             <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
                 <Spinner animation="border" variant="danger" />
@@ -87,7 +102,18 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <Container className="py-5 mt-5">
-            <h2 className="text-white mb-4 fw-bold">Admin Dashboard</h2>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="text-white mb-0 fw-bold">Admin Dashboard</h2>
+                <Button
+                    variant="outline-danger"
+                    onClick={() => fetchDashboardData(true)}
+                    disabled={refreshing}
+                    className="d-flex align-items-center gap-2"
+                >
+                    {refreshing ? <Spinner size="sm" /> : <FaPowerOff style={{ transform: 'rotate(90deg)' }} />}
+                    {refreshing ? 'Refreshing...' : 'Refresh Data'}
+                </Button>
+            </div>
 
             <Row className="mb-5">
                 <Col md={3}>

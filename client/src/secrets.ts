@@ -1,3 +1,3 @@
 export const secrets = {
-  backendEndpoint: 'http://localhost:5174', // Proxy through Vite
+  backendEndpoint: '', // Use relative paths to allow Vite proxy to handle it
 };

@@ -29,6 +29,8 @@ class User extends Authenticatable
         'avatar',
         'last_login_at',
         'is_active',
+        'login_attempts',
+        'locked_until',
     ];
 
     /**
@@ -49,6 +51,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
+        'locked_until' => 'datetime',
         'is_active' => 'boolean',
     ];
 
