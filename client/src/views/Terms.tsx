@@ -2,54 +2,111 @@ import { Container, Card } from 'react-bootstrap';
 
 export default function Terms() {
     return (
-        <Container className="py-5" style={{ maxWidth: '900px' }}>
-            <Card className="p-5 bg-dark text-white border-0 shadow-lg" style={{ borderRadius: '20px', background: 'linear-gradient(145deg, #1a1a1a, #0d0d0d)' }}>
+        <Container className="py-5" style={{ maxWidth: '950px' }}>
+            <Card className="p-5 bg-dark text-white border-0 shadow-lg" style={{
+                borderRadius: '30px',
+                background: 'rgba(20, 20, 20, 0.98)',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
                 <Card.Body>
-                    <h1 className="text-center mb-2 fw-bold" style={{ letterSpacing: '2px', color: '#ff4d4d' }}>Terms & Conditions</h1>
-                    <p className="text-muted text-center mb-5 small">Last Updated: February 16, 2026</p>
+                    <h1 className="text-center mb-2 fw-bold" style={{ letterSpacing: '4px', color: '#D90429', fontSize: '3rem', textShadow: '0 0 20px rgba(217, 4, 41, 0.3)' }}>
+                        TERMS & CONDITIONS
+                    </h1>
+                    <p className="text-white text-center mb-5 fw-bold opacity-50">Last Updated: February 16, 2026</p>
 
                     <section className="mb-5">
-                        <h2 className="h4 mb-4 text-center" style={{ color: '#00d4ff', borderBottom: '1px solid #333', paddingBottom: '15px' }}>📌 Booking & Ticket Rules</h2>
+                        <h2 className="h3 mb-5 text-center text-uppercase fw-bold" style={{ color: '#00d4ff', letterSpacing: '2px' }}>
+                            <span style={{ borderBottom: '4px solid #00d4ff', paddingBottom: '10px' }}>📌 Booking & Ticket Rules</span>
+                        </h2>
 
-                        <div className="rules-list">
+                        <div className="rules-list mt-4">
                             <ul className="list-unstyled">
-                                <li className="mb-4 p-3 border-start border-danger border-4 bg-secondary-dark rounded">
-                                    <h5 className="text-danger fw-bold mb-1">💳 Payment Required</h5>
-                                    <p className="mb-0 text-light opacity-75">All tickets must be paid for in full at the time of booking. Customers can only purchase and receive tickets after successful payment confirmation.</p>
+                                <li className="mb-5 p-4 rounded shadow-lg" style={{ background: '#111', borderLeft: '8px solid #D90429' }}>
+                                    <div className="d-flex align-items-center mb-3">
+                                        <span style={{
+                                            background: '#D90429',
+                                            padding: '8px 15px',
+                                            borderRadius: '6px',
+                                            fontWeight: '800',
+                                            fontSize: '0.9rem',
+                                            marginRight: '20px',
+                                            boxShadow: '0 4px 15px rgba(217, 4, 41, 0.4)'
+                                        }}>REQUIRED</span>
+                                        <h3 className="fw-bold mb-0 text-white" style={{ fontSize: '1.6rem' }}>💳 Payment Confirmation</h3>
+                                    </div>
+                                    <p className="text-white ms-0" style={{ fontSize: '1.25rem', lineHeight: '1.7' }}>
+                                        All tickets must be <span style={{ background: 'rgba(217, 4, 41, 0.2)', padding: '2px 8px', borderRadius: '4px', color: '#ff4d4d', fontWeight: '700', borderBottom: '2px solid #D90429' }}>PAID IN FULL</span> at booking. You will only be issued a valid ticket after the transaction is confirmed.
+                                    </p>
                                 </li>
 
-                                <li className="mb-4 p-3 border-start border-warning border-4 bg-secondary-dark rounded">
-                                    <h5 className="text-warning fw-bold mb-1">🚫 No Refund for Non-Attendance</h5>
-                                    <p className="mb-0 text-light opacity-75">Tickets are non-refundable. If you fail to attend the event after booking for any reason, no refund will be issued.</p>
+                                <li className="mb-5 p-4 rounded shadow-lg" style={{ background: '#111', borderLeft: '8px solid #FFC107' }}>
+                                    <div className="d-flex align-items-center mb-3">
+                                        <span style={{
+                                            background: '#FFC107',
+                                            padding: '8px 15px',
+                                            borderRadius: '6px',
+                                            fontWeight: '800',
+                                            fontSize: '0.9rem',
+                                            marginRight: '20px',
+                                            color: '#000',
+                                            boxShadow: '0 4px 15px rgba(255, 193, 7, 0.4)'
+                                        }}>STRICT POLICY</span>
+                                        <h3 className="fw-bold mb-0 text-white" style={{ fontSize: '1.6rem' }}>🚫 Non-Refundable Policy</h3>
+                                    </div>
+                                    <p className="text-white ms-0" style={{ fontSize: '1.25rem', lineHeight: '1.7' }}>
+                                        If you book a ticket and fail to attend, <span style={{ background: 'rgba(255, 193, 7, 0.2)', padding: '2px 8px', borderRadius: '4px', color: '#FFC107', fontWeight: '700', borderBottom: '2px solid #FFC107' }}>NO REFUND</span> is provided. Attendance is the responsibility of the ticket holder.
+                                    </p>
                                 </li>
 
-                                <li className="mb-4 p-3 border-start border-info border-4 bg-secondary-dark rounded">
-                                    <h5 className="text-info fw-bold mb-1">🆔 Identification</h5>
-                                    <p className="mb-0 text-light opacity-75">A valid original ID proof must be presented at the venue for entry. Digital or photocopies may not be accepted.</p>
+                                <li className="mb-5 p-4 rounded shadow-lg" style={{ background: '#111', borderLeft: '8px solid #17A2B8' }}>
+                                    <div className="d-flex align-items-center mb-3">
+                                        <span style={{
+                                            background: '#17A2B8',
+                                            padding: '8px 15px',
+                                            borderRadius: '6px',
+                                            fontWeight: '800',
+                                            fontSize: '0.9rem',
+                                            marginRight: '20px',
+                                            boxShadow: '0 4px 15px rgba(23, 162, 184, 0.4)'
+                                        }}>VALID ID</span>
+                                        <h3 className="fw-bold mb-0 text-white" style={{ fontSize: '1.6rem' }}>🆔 Identity Verification</h3>
+                                    </div>
+                                    <p className="text-white ms-0" style={{ fontSize: '1.25rem', lineHeight: '1.7' }}>
+                                        You MUST bring your <span className="fw-bold text-info">ORIGINAL ID PROOF</span>. Digital copies or photos on mobile phones will NOT be accepted at the entry gate.
+                                    </p>
                                 </li>
 
-                                <li className="mb-4 p-3 border-start border-info border-4 bg-secondary-dark rounded">
-                                    <h5 className="text-info fw-bold mb-1">🕒 Entry Policy</h5>
-                                    <p className="mb-0 text-light opacity-75">Entry is strictly prohibited once the event has started. Late arrivals will not be entitled to a refund or entry.</p>
-                                </li>
-
-                                <li className="mb-4 p-3 border-start border-info border-4 bg-secondary-dark rounded">
-                                    <h5 className="text-info fw-bold mb-1">🔄 Transfers & Resale</h5>
-                                    <p className="mb-0 text-light opacity-75">Reselling tickets on third-party platforms is strictly forbidden. Unauthorized reselling will result in ticket cancellation without refund.</p>
+                                <li className="mb-5 p-4 rounded shadow-lg" style={{ background: '#111', borderLeft: '8px solid #00d4ff' }}>
+                                    <div className="d-flex align-items-center mb-3">
+                                        <span style={{
+                                            background: '#00d4ff',
+                                            padding: '8px 15px',
+                                            borderRadius: '6px',
+                                            fontWeight: '800',
+                                            fontSize: '0.9rem',
+                                            marginRight: '20px',
+                                            color: '#000',
+                                            boxShadow: '0 4px 15px rgba(0, 212, 255, 0.4)'
+                                        }}>GATE CLOSE</span>
+                                        <h3 className="fw-bold mb-0 text-white" style={{ fontSize: '1.6rem' }}>🕒 Entry Deadline</h3>
+                                    </div>
+                                    <p className="text-white ms-0" style={{ fontSize: '1.25rem', lineHeight: '1.7' }}>
+                                        Entry is <span className="fw-bold text-danger">STRICTLY PROHIBITED</span> after the event start time. No entry or refund will be given for late arrivals.
+                                    </p>
                                 </li>
                             </ul>
                         </div>
                     </section>
 
-                    <section className="mb-5 text-center p-4 rounded" style={{ backgroundColor: 'rgba(0, 212, 255, 0.05)', border: '1px solid #333' }}>
-                        <h2 className="h5 text-info mb-3">User Conduct</h2>
-                        <p className="small text-light opacity-75 mb-0">
-                            Users must behave appropriately. Any form of harassment, illegal activity, or violation of venue rules will result in immediate removal without refund and a potential permanent ban from AURA++.
+                    <section className="mt-5 p-5 rounded text-center" style={{ background: 'linear-gradient(rgba(217, 4, 41, 0.1), transparent)', border: '2px solid rgba(217, 4, 41, 0.3)' }}>
+                        <h4 className="fw-bold mb-4" style={{ color: '#D90429', letterSpacing: '2px' }}>⚠️ SAFETY & CONDUCT</h4>
+                        <p className="text-white fw-bold mb-0" style={{ fontSize: '1.2rem' }}>
+                            Violation of event rules or any harassment will result in <span style={{ color: '#D90429', textDecoration: 'underline' }}>IMMEDIATE REMOVAL</span> without refund and a lifetime ban from AURA++.
                         </p>
                     </section>
 
                     <div className="text-center mt-5 pt-4 border-top border-secondary">
-                        <p className="small text-muted mb-0">By using AURA++, you agree to abide by these terms. We connect you with events but are not responsible for event quality or injuries.</p>
+                        <p className="small text-white opacity-50 mb-0">© 2026 AURA++ Ticket Booking System. All Rights Reserved.</p>
                     </div>
                 </Card.Body>
             </Card>
