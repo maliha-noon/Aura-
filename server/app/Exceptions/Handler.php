@@ -3,6 +3,10 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Auth\AuthenticationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -43,38 +47,60 @@ class Handler extends ExceptionHandler
      * Render an exception into an HTTP response.
      *
      * @param \Illuminate\Http\Request $request
-     * @param \Throwable $exception
+     * @param \Throwable $e
      * @return \Illuminate\Http\JsonResponse|\Symfony\Component\HttpFoundation\Response
      */
-    public function render($request, Throwable $exception)
+    public function render($request, Throwable $e)
     {
-        $message = $this->getMessage($exception);
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return $this->handleJsonResponse($e);
+        }
 
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-        ], 200);
+        return parent::render($request, $e);
     }
-
-
 
     /**
-     * Get the error message from the exception.
+     * Transform the exception into a JSON response.
      *
-     * @param \Throwable $exception
-     * @return string
+     * @param \Throwable $e
+     * @return \Illuminate\Http\JsonResponse
      */
-    protected function getMessage(Throwable $exception): string
+    protected function handleJsonResponse(Throwable $e)
     {
-        if ($exception instanceof ValidationException) {
-            return 'Validation failed.';
+        $statusCode = 500;
+        $message = $e->getMessage() ?: 'An unexpected error occurred.';
+        $errors = null;
+
+        if ($e instanceof ValidationException) {
+            $statusCode = 422;
+            $message = 'The given data was invalid.';
+            $errors = $e->errors();
+        } elseif ($e instanceof ModelNotFoundException) {
+            $statusCode = 404;
+            $message = 'Resource not found.';
+        } elseif ($e instanceof AuthenticationException) {
+            $statusCode = 401;
+            $message = 'Unauthenticated.';
+        } elseif ($e instanceof HttpException) {
+            $statusCode = $e->getStatusCode();
         }
 
-        if ($exception instanceof ModelNotFoundException) {
-            return 'Resource not found.';
+        $response = [
+            'success' => false,
+            'message' => $message,
+        ];
+
+        if ($errors) {
+            $response['errors'] = $errors;
         }
 
-        return $exception->getMessage() ?: 'An unexpected error occurred.';
+        if (config('app.debug')) {
+            $response['exception'] = get_class($e);
+            $response['file'] = $e->getFile();
+            $response['line'] = $e->getLine();
+            $response['trace'] = collect($e->getTrace())->take(5);
+        }
+
+        return response()->json($response, $statusCode);
     }
-
 }

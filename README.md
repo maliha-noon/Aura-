@@ -30,6 +30,9 @@ Make sure the following are installed:
 - MySQL / PostgreSQL / SQLite
 
 ---
+Backend: php artisan serve --host 0.0.0.0 --port 8000
+Frontend: npm run dev -- --host
+
 
 ## Setup Instructions
 

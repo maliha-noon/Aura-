@@ -161,10 +161,10 @@ export default function Register() {
 
 
 
-                        <div className="text-center">
-                            <span className="text-muted">Already have an account? </span>
-                            <Link to="/login" style={{ color: '#D90429', textDecoration: 'none', fontWeight: 'bold' }}>
-                                Login here
+                        <div className="text-center mt-4 pt-3 border-top border-secondary">
+                            <span className="text-muted small">Already have an account? </span>
+                            <Link to="/login" className="login-link ms-1">
+                                Sign In
                             </Link>
                         </div>
                     </Form>
