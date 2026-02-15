@@ -1,53 +1,55 @@
-import { Container, Card, Row, Col } from 'react-bootstrap';
+import { Container, Card } from 'react-bootstrap';
 
 export default function Terms() {
     return (
-        <Container className="py-5">
-            <Card className="p-4 bg-dark text-white border-secondary shadow-lg">
+        <Container className="py-5" style={{ maxWidth: '900px' }}>
+            <Card className="p-5 bg-dark text-white border-0 shadow-lg" style={{ borderRadius: '20px', background: 'linear-gradient(145deg, #1a1a1a, #0d0d0d)' }}>
                 <Card.Body>
-                    <h1 className="text-center mb-4 fw-bold">Terms & Conditions</h1>
-                    <p className="text-muted text-center mb-5">Last Updated: February 15, 2026</p>
+                    <h1 className="text-center mb-2 fw-bold" style={{ letterSpacing: '2px', color: '#ff4d4d' }}>Terms & Conditions</h1>
+                    <p className="text-muted text-center mb-5 small">Last Updated: February 16, 2026</p>
 
                     <section className="mb-5">
-                        <h2 className="h4 text-danger border-bottom border-danger pb-2 mb-3">1. Booking Rules</h2>
-                        <Row mt={4}>
-                            <Col md={6}>
-                                <Card className="h-100 bg-secondary-dark border-danger p-3">
-                                    <h3 className="h5 text-danger font-weight-bold">🔴 Strict Rules</h3>
-                                    <ul className="text-light">
-                                        <li><strong>No Cancellations:</strong> Tickets purchased under 'Non-Refundable' category cannot be cancelled under any circumstances.</li>
-                                        <li><strong>ID Requirement:</strong> Original ID proof must be presented at the venue. Digital copies may not be accepted.</li>
-                                        <li><strong>Late Entry:</strong> Entry is strictly prohibited after the event starts. No refunds for late arrivals.</li>
-                                        <li><strong>Resale Prohibited:</strong> Reselling tickets on third-party platforms is strictly forbidden and will result in ticket nullification.</li>
-                                    </ul>
-                                </Card>
-                            </Col>
-                            <Col md={6}>
-                                <Card className="h-100 bg-secondary-dark border-success p-3">
-                                    <h3 className="h5 text-success font-weight-bold">🟢 Flexible Rules</h3>
-                                    <ul className="text-light">
-                                        <li><strong>24-Hour Cancellation:</strong> Tickets marked as 'Flexible' can be cancelled up to 24 hours before the event for a full refund.</li>
-                                        <li><strong>Name Transfer:</strong> You can transfer your ticket to a friend or family member up to 6 hours before the event via the dashboard.</li>
-                                        <li><strong>Rescheduling:</strong> Subject to availability, flexible tickets can be rescheduled to a different date for a small processing fee.</li>
-                                        <li><strong>Digital Entry:</strong> QR codes on mobile devices are fully accepted for entry.</li>
-                                    </ul>
-                                </Card>
-                            </Col>
-                        </Row>
+                        <h2 className="h4 mb-4 text-center" style={{ color: '#00d4ff', borderBottom: '1px solid #333', paddingBottom: '15px' }}>📌 Booking & Ticket Rules</h2>
+
+                        <div className="rules-list">
+                            <ul className="list-unstyled">
+                                <li className="mb-4 p-3 border-start border-danger border-4 bg-secondary-dark rounded">
+                                    <h5 className="text-danger fw-bold mb-1">💳 Payment Required</h5>
+                                    <p className="mb-0 text-light opacity-75">All tickets must be paid for in full at the time of booking. Customers can only purchase and receive tickets after successful payment confirmation.</p>
+                                </li>
+
+                                <li className="mb-4 p-3 border-start border-warning border-4 bg-secondary-dark rounded">
+                                    <h5 className="text-warning fw-bold mb-1">🚫 No Refund for Non-Attendance</h5>
+                                    <p className="mb-0 text-light opacity-75">Tickets are non-refundable. If you fail to attend the event after booking for any reason, no refund will be issued.</p>
+                                </li>
+
+                                <li className="mb-4 p-3 border-start border-info border-4 bg-secondary-dark rounded">
+                                    <h5 className="text-info fw-bold mb-1">🆔 Identification</h5>
+                                    <p className="mb-0 text-light opacity-75">A valid original ID proof must be presented at the venue for entry. Digital or photocopies may not be accepted.</p>
+                                </li>
+
+                                <li className="mb-4 p-3 border-start border-info border-4 bg-secondary-dark rounded">
+                                    <h5 className="text-info fw-bold mb-1">🕒 Entry Policy</h5>
+                                    <p className="mb-0 text-light opacity-75">Entry is strictly prohibited once the event has started. Late arrivals will not be entitled to a refund or entry.</p>
+                                </li>
+
+                                <li className="mb-4 p-3 border-start border-info border-4 bg-secondary-dark rounded">
+                                    <h5 className="text-info fw-bold mb-1">🔄 Transfers & Resale</h5>
+                                    <p className="mb-0 text-light opacity-75">Reselling tickets on third-party platforms is strictly forbidden. Unauthorized reselling will result in ticket cancellation without refund.</p>
+                                </li>
+                            </ul>
+                        </div>
                     </section>
 
-                    <section className="mb-4">
-                        <h2 className="h4 text-info">2. User Conduct</h2>
-                        <p>Users are expected to behave appropriately at events. Any form of harassment, illegal activity, or violation of venue rules will result in immediate removal without refund and a potential permanent ban from AURA++.</p>
+                    <section className="mb-5 text-center p-4 rounded" style={{ backgroundColor: 'rgba(0, 212, 255, 0.05)', border: '1px solid #333' }}>
+                        <h2 className="h5 text-info mb-3">User Conduct</h2>
+                        <p className="small text-light opacity-75 mb-0">
+                            Users must behave appropriately. Any form of harassment, illegal activity, or violation of venue rules will result in immediate removal without refund and a potential permanent ban from AURA++.
+                        </p>
                     </section>
 
-                    <section className="mb-4">
-                        <h2 className="h4 text-info">3. Limitation of Liability</h2>
-                        <p>AURA++ is a platform connecting users with event organizers. We are not responsible for event cancellations, quality of service at the venue, or any personal injury sustained during the event.</p>
-                    </section>
-
-                    <div className="text-center mt-5">
-                        <p className="small text-muted">By using our services, you agree to abide by these terms. Violations may result in account suspension.</p>
+                    <div className="text-center mt-5 pt-4 border-top border-secondary">
+                        <p className="small text-muted mb-0">By using AURA++, you agree to abide by these terms. We connect you with events but are not responsible for event quality or injuries.</p>
                     </div>
                 </Card.Body>
             </Card>
