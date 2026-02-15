@@ -15,10 +15,6 @@ export default function Terms() {
                     <p className="text-white text-center mb-5 fw-bold opacity-50">Last Updated: February 16, 2026</p>
 
                     <section className="mb-5">
-                        <h2 className="h3 mb-5 text-center text-uppercase fw-bold" style={{ color: '#00d4ff', letterSpacing: '2px' }}>
-                            <span style={{ borderBottom: '4px solid #00d4ff', paddingBottom: '10px' }}>📌 Booking & Ticket Rules</span>
-                        </h2>
-
                         <div className="rules-list mt-4">
                             <ul className="list-unstyled">
                                 <li className="mb-5 p-4 rounded shadow-lg" style={{ background: '#111', borderLeft: '8px solid #D90429' }}>
