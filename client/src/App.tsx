@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { Outlet, Route, Routes, Navigate } from 'react-router-dom';
 import MainLayout from './views/MainLayout';
 import Home from './views/Home';
+import Events from './views/Events';
 import Login from './views/Login';
 import Register from './views/Register';
 import ForgotPassword from './views/ForgotPassword';
@@ -34,6 +35,7 @@ function App() {
           }
         >
           <Route path={'/'} element={<Home />} />
+          <Route path={'/events'} element={<Events />} />
           <Route path={'/login'} element={<Login />} />
           <Route path={'/register'} element={<Register />} />
           <Route path={'/terms'} element={<Terms />} />
