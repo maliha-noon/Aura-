@@ -148,6 +148,36 @@ class ApiClient {
     toast.error(error.message || 'Something went wrong');
   }
 
+  // --- Event Methods ---
+
+  async getEvents() {
+    try {
+      const response = await this.client.get('/api/events');
+      return { success: true, data: response.data.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch events' };
+    }
+  }
+
+  async bookEvent(eventId: number, paymentMethod: string, quantity: number = 1) {
+    try {
+      const response = await this.client.post('/api/bookings', {
+        event_id: eventId,
+        quantity,
+        payment_method: paymentMethod
+      });
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      let message = error.response?.data?.message || error.message || 'Booking failed';
+      if (error.response?.status === 401) {
+        message = 'Please login to book this event';
+      }
+      return { success: false, message, status: error.response?.status };
+    }
+  }
+
   // --- Admin Methods ---
 
   async getAdminStats() {

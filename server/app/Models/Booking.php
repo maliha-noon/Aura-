@@ -14,6 +14,8 @@ class Booking extends Model
         'event_id',
         'quantity',
         'total_price',
+        'payment_method',
+        'payment_status',
         'status',
     ];
 
