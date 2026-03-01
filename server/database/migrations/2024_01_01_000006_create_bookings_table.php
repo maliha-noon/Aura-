@@ -18,9 +18,9 @@ class CreateBookingsTable extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('event_id')->constrained()->onDelete('cascade');
             $table->integer('quantity');
-            $table->decimal('total_price', 10, 2);
-            $table->string('payment_method')->nullable(); // card, bkash
-            $table->string('payment_status')->default('pending'); // pending, paid, failed
+            $table->decimal('total_price', 12, 2);
+            $table->string('phone');
+            $table->string('transaction_id');
             $table->string('status')->default('confirmed'); // pending, confirmed, cancelled
             $table->timestamps();
         });

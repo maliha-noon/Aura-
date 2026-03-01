@@ -6,81 +6,70 @@ use App\Models\Booking;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class BookingController extends Controller
 {
-    /**
-     * Store a newly created booking in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'event_id' => 'required|exists:events,id',
             'quantity' => 'required|integer|min:1',
-            'payment_method' => 'required|string|in:card,bkash',
+            'phone' => 'nullable|string|max:20',
+            'transaction_id' => 'nullable|string|max:255',
+            'payment_method' => 'nullable|string',
+            'card_number' => 'nullable|string',
+            'expiry' => 'nullable|string',
+            'cvv' => 'nullable|string',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
         $event = Event::findOrFail($request->event_id);
-
-        // Check if already booked
-        $existing = Booking::where('user_id', Auth::id())
-            ->where('event_id', $event->id)
-            ->first();
-
-        if ($existing) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You have already booked this event.',
-            ], 400);
-        }
-
+        
         // Check capacity
-        if ($event->capacity < $request->quantity) {
+        $bookedCount = Booking::where('event_id', $event->id)->sum('quantity');
+        if ($bookedCount + $request->quantity > $event->capacity) {
             return response()->json([
-                'success' => false,
-                'message' => 'Not enough capacity available.',
+                'success' => false, 
+                'message' => 'Not enough tickets available. Only ' . ($event->capacity - $bookedCount) . ' left.'
             ], 400);
         }
+
+        $total_price = $event->price * $request->quantity;
 
         $booking = Booking::create([
             'user_id' => Auth::id(),
             'event_id' => $event->id,
             'quantity' => $request->quantity,
-            'total_price' => $event->price * $request->quantity,
+            'total_price' => $total_price,
+            'phone' => $request->phone ?? 'N/A',
+            'transaction_id' => $request->transaction_id ?? 'Mock-' . uniqid(),
             'payment_method' => $request->payment_method,
-            'payment_status' => 'paid', // Mark as paid for mock
+            'card_number' => $request->card_number,
+            'expiry' => $request->expiry,
+            'cvv' => $request->cvv,
             'status' => 'confirmed',
         ]);
 
-        // Reduce capacity
-        $event->capacity -= $request->quantity;
-        $event->save();
-
         return response()->json([
             'success' => true,
-            'message' => 'Booking successful!',
-            'booking' => $booking,
-        ]);
+            'message' => 'Booking confirmed! Your tickets are ready.',
+            'booking' => $booking
+        ], 201);
     }
 
-    /**
-     * Display a listing of the user's bookings.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function myBookings()
+    public function index()
     {
-        $bookings = Booking::with('event')
-            ->where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $bookings = Auth::user()->bookings()->with('event')->latest()->get();
+        return response()->json(['success' => true, 'bookings' => $bookings]);
+    }
 
-        return response()->json([
-            'success' => true,
-            'data' => $bookings,
-        ]);
+    public function getAllBookings()
+    {
+        $bookings = Booking::with(['user', 'event'])->latest()->get();
+        return response()->json(['success' => true, 'bookings' => $bookings]);
     }
 }

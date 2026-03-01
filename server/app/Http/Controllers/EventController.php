@@ -4,31 +4,72 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
 {
-    /**
-     * Display a listing of the events.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function index()
     {
-        $events = Event::orderBy('date', 'asc')->get();
-        $user = auth('sanctum')->user();
+        $events = Event::latest()->get();
+        return response()->json(['success' => true, 'events' => $events]);
+    }
 
-        $events->map(function ($event) use ($user) {
-            $event->is_booked = $user ? $event->bookings()->where('user_id', $user->id)->exists() : false;
-            // Add a "live" flag if the event is happening now (within 3 hours)
-            $now = now();
-            $eventDate = \Carbon\Carbon::parse($event->date);
-            $event->is_live = $now->between($eventDate, $eventDate->copy()->addHours(3));
-            return $event;
-        });
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'date' => 'required|date',
+            'location' => 'required|string|max:255',
+            'image' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'capacity' => 'required|integer|min:1',
+            'category' => 'nullable|string|max:100',
+            'is_featured' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $event = Event::create($request->all());
 
         return response()->json([
             'success' => true,
-            'data' => $events,
+            'message' => 'Event created successfully',
+            'event' => $event
+        ], 201);
+    }
+
+    public function show(Event $event)
+    {
+        return response()->json(['success' => true, 'event' => $event]);
+    }
+
+    public function update(Request $request, Event $event)
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'string|max:255',
+            'price' => 'numeric|min:0',
+            'capacity' => 'integer|min:1',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $event->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Event updated successfully',
+            'event' => $event
+        ]);
+    }
+
+    public function destroy(Event $event)
+    {
+        $event->delete();
+        return response()->json(['success' => true, 'message' => 'Event deleted successfully']);
     }
 }
