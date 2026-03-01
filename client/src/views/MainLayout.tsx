@@ -26,7 +26,7 @@ const MainLayout: React.FC<BaseLayoutProps> = ({ children }) => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" className="bg-secondary" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto align-items-center">
-              <Nav.Link as={Link} to="/">EVENT</Nav.Link>
+              <Nav.Link as={Link} to="/events">EVENT</Nav.Link>
               <Nav.Link as={Link} to="/">ABOUT</Nav.Link>
               {isAdmin && (
                 <Nav.Link as={Link} to="/admin" className="text-warning fw-bold">DASHBOARD</Nav.Link>

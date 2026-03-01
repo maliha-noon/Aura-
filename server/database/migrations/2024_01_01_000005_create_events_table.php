@@ -19,6 +19,7 @@ class CreateEventsTable extends Migration
             $table->text('description');
             $table->dateTime('date');
             $table->string('location');
+            $table->string('city_country');
             $table->string('image')->nullable();
             $table->decimal('price', 10, 2);
             $table->integer('capacity');
