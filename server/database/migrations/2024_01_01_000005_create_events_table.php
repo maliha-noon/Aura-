@@ -20,8 +20,10 @@ class CreateEventsTable extends Migration
             $table->dateTime('date');
             $table->string('location');
             $table->string('image')->nullable();
-            $table->decimal('price', 8, 2);
+            $table->decimal('price', 10, 2);
             $table->integer('capacity');
+            $table->string('category')->default('General');
+            $table->boolean('is_featured')->default(false);
             $table->timestamps();
         });
     }
