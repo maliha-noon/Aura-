@@ -189,6 +189,48 @@ class ApiClient {
       return { success: false, message: 'Failed to suspend user' };
     }
   }
+
+  // --- Event & Booking Methods ---
+
+  async getEvents() {
+    try {
+      const response = await this.client.get('/api/events');
+      return { success: true, events: response.data.events };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch events' };
+    }
+  }
+
+  async createEvent(data: any) {
+    try {
+      const response = await this.client.post('/api/admin/events', data);
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to add event' };
+    }
+  }
+
+  async bookTicket(data: any) {
+    try {
+      const response = await this.client.post('/api/bookings', data);
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to book ticket' };
+    }
+  }
+
+  async getMyBookings() {
+    try {
+      const response = await this.client.get('/api/my-bookings');
+      return { success: true, bookings: response.data.bookings };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch bookings' };
+    }
+  }
 }
 
 export default ApiClient;
