@@ -9,19 +9,22 @@ class SessionController extends Controller
 {
     protected $attendanceService;
 
+    // Inject AttendanceService via constructor (Dependency Injection)
+    // Laravel automatically resolves and passes the service instance
     public function __construct(AttendanceService $attendanceService)
     {
         $this->attendanceService = $attendanceService;
     }
 
-    // Get session data
+    // Returns the currently active session (e.g. an ongoing class/event session).
+    // Returns a 200 with success:false if no active session exists.
     public function getSession(Request $request)
     {
-        // Call the service to get the valid session
         $session = $this->attendanceService->getSession();
         if ($session) {
             return response()->json(['success' => true] + $session->toArray());
-        } else {
+        }
+        else {
             return response()->json([
                 'success' => false,
                 'message' => 'No active session found',
@@ -29,11 +32,13 @@ class SessionController extends Controller
         }
     }
 
+    // Creates a new session with a name and duration.
+    // Delegates the creation logic to AttendanceService.
     public function createSession(Request $request)
     {
         $sessionData = $request->validate([
             'name' => 'required|string',
-            'duration' => 'required|integer',
+            'duration' => 'required|integer', // duration in minutes
         ]);
 
         $session = $this->attendanceService->createSession($sessionData);
@@ -45,11 +50,12 @@ class SessionController extends Controller
         ]);
     }
 
+    // Activates or deactivates a session by toggling its 'active' status.
     public function updateSession(Request $request)
     {
         $validated = $request->validate([
             'session_id' => 'required|integer',
-            'active' => 'required|boolean',
+            'active' => 'required|boolean', // true = active, false = closed
         ]);
 
         $session = $this->attendanceService->updateSessionStatus($validated['session_id'], $validated['active']);
@@ -59,9 +65,9 @@ class SessionController extends Controller
             'message' => 'Session updated successfully.',
             'session' => $session,
         ]);
-
     }
 
+    // Returns all sessions ever created — used by admin for overview.
     public function viewSessions(Request $request)
     {
         $sessions = $this->attendanceService->getAllSessions();
@@ -72,14 +78,14 @@ class SessionController extends Controller
         ]);
     }
 
+    // Records attendance for a student using their roll number.
+    // Delegates to AttendanceService which handles the DB logic.
     public function submitAttendance(Request $request)
     {
-        // Validate the incoming request
         $data = $request->validate([
-            'roll' => 'required|int',
+            'roll' => 'required|int', // student roll number
         ]);
 
-        // Call the AttendanceService to submit the attendance
         $attendance = $this->attendanceService->submitAttendance($data['roll']);
 
         return response()->json([
