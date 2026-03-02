@@ -9,6 +9,10 @@ import ResetPassword from './views/ResetPassword';
 import AdminDashboard from './views/AdminDashboard';
 import Terms from './views/Terms';
 import Privacy from './views/Privacy';
+import Events from './views/Events';
+import About from './views/About';
+import Gallery from './views/Gallery';
+import AddEventForm from './views/AddEventForm';
 import { useAuth } from './context/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
@@ -22,6 +26,7 @@ const AdminProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) =>
   return <>{children}</>;
 };
 
+
 function App() {
   return (
     <>
@@ -34,6 +39,10 @@ function App() {
           }
         >
           <Route path={'/'} element={<Home />} />
+          <Route path={'/events'} element={<Events />} />
+          <Route path={'/about'} element={<About />} />
+          <Route path={'/gallery'} element={<Gallery />} />
+          <Route path={'/add-event'} element={<AddEventForm />} />
           <Route path={'/login'} element={<Login />} />
           <Route path={'/register'} element={<Register />} />
           <Route path={'/terms'} element={<Terms />} />

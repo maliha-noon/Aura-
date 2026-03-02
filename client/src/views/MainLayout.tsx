@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { Button, Container, Nav, Navbar } from "react-bootstrap";
+import { Button, Container, Nav, Navbar, Row, Col } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -26,8 +26,10 @@ const MainLayout: React.FC<BaseLayoutProps> = ({ children }) => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" className="bg-secondary" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto align-items-center">
-              <Nav.Link as={Link} to="/">EVENT</Nav.Link>
-              <Nav.Link as={Link} to="/">ABOUT</Nav.Link>
+              <Nav.Link as={Link} to="/">HOME</Nav.Link>
+              <Nav.Link as={Link} to="/events">EVENT</Nav.Link>
+              <Nav.Link as={Link} to="/about">ABOUT</Nav.Link>
+              <Nav.Link as={Link} to="/gallery">GALLERY</Nav.Link>
               {isAdmin && (
                 <Nav.Link as={Link} to="/admin" className="text-warning fw-bold">DASHBOARD</Nav.Link>
               )}
@@ -64,9 +66,57 @@ const MainLayout: React.FC<BaseLayoutProps> = ({ children }) => {
         {children}
       </main>
 
-      <footer className="bg-black text-white py-4 mt-auto border-top border-dark">
+      <footer className="footer-premium pt-5 pb-4 mt-auto border-top border-dark">
         <Container>
-          <p className="mb-0">&copy; {new Date().getFullYear()} AURA++. All rights reserved.</p>
+          <Row>
+            <Col lg={4} className="mb-4 mb-lg-0">
+              <h4 className="fw-bold mb-4 font-outfit">AURA<span className="text-red">++</span></h4>
+              <p className="text-muted small pe-lg-5">
+                The ultimate platform for discovering and booking exclusive events. Join us to experience the best concerts, festivals, and more.
+              </p>
+            </Col>
+            <Col lg={2} md={4} className="mb-4 mb-lg-0">
+              <h6 className="text-white fw-bold mb-3">Quick Links</h6>
+              <ul className="list-unstyled footer-links">
+                <li><Link to="/">Home</Link></li>
+                <li><Link to="/events">Events</Link></li>
+                <li><Link to="/about">About Us</Link></li>
+                <li><Link to="/gallery">Gallery</Link></li>
+              </ul>
+            </Col>
+            <Col lg={2} md={4} className="mb-4 mb-lg-0">
+              <h6 className="text-white fw-bold mb-3">Accounts</h6>
+              <ul className="list-unstyled footer-links">
+                <li><Link to="/login">Login</Link></li>
+                <li><Link to="/register">Register</Link></li>
+                <li><Link to="/terms">Terms</Link></li>
+                <li><Link to="/privacy">Privacy</Link></li>
+              </ul>
+            </Col>
+            <Col lg={4} md={4}>
+              <h6 className="text-white fw-bold mb-3">Contact Us</h6>
+              <ul className="list-unstyled footer-links">
+                <li className="text-muted small mb-2">
+                  <span className="text-red me-2">📍</span> Radisson Blu, Dhaka, Bangladesh
+                </li>
+                <li className="text-muted small mb-2">
+                  <span className="text-red me-2">✉️</span> eventica@gmail.com
+                </li>
+                <li className="text-muted small mb-2">
+                  <span className="text-red me-2">📞</span> +880 1234 567 890
+                </li>
+              </ul>
+            </Col>
+          </Row>
+          <hr className="border-secondary opacity-10 my-4" />
+          <div className="d-flex justify-content-between align-items-center">
+            <p className="mb-0 text-muted small">&copy; {new Date().getFullYear()} AURA++. All rights reserved.</p>
+            <div className="social-links d-flex gap-3">
+              <span className="text-muted small cursor-pointer hover-text-red">FB</span>
+              <span className="text-muted small cursor-pointer hover-text-red">IG</span>
+              <span className="text-muted small cursor-pointer hover-text-red">TW</span>
+            </div>
+          </div>
         </Container>
       </footer>
     </div>

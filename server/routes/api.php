@@ -42,4 +42,20 @@ Route::middleware(['auth:sanctum', 'check.admin'])->prefix('admin')->group(funct
     Route::get('/users', [\App\Http\Controllers\AdminController::class, 'getUsers']);
     Route::post('/users/{user}/toggle', [\App\Http\Controllers\AdminController::class, 'toggleUserStatus']);
     Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class, 'deleteUser']);
+    
+    // Admin Event Management
+    Route::post('/events', [\App\Http\Controllers\EventController::class, 'store']);
+    Route::put('/events/{event}', [\App\Http\Controllers\EventController::class, 'update']);
+    Route::delete('/events/{event}', [\App\Http\Controllers\EventController::class, 'destroy']);
+    Route::get('/bookings', [\App\Http\Controllers\BookingController::class, 'getAllBookings']);
+});
+
+// Public Event Routes
+Route::get('/events', [\App\Http\Controllers\EventController::class, 'index']);
+Route::get('/events/{event}', [\App\Http\Controllers\EventController::class, 'show']);
+
+// User Booking Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/bookings', [\App\Http\Controllers\BookingController::class, 'store']);
+    Route::get('/my-bookings', [\App\Http\Controllers\BookingController::class, 'index']);
 });

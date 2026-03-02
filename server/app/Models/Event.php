@@ -17,6 +17,8 @@ class Event extends Model
         'image',
         'price',
         'capacity',
+        'category',
+        'is_featured',
     ];
 
     public function bookings()
