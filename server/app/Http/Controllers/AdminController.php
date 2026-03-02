@@ -9,9 +9,8 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-    /**
-     * Get platform statistics.
-     */
+    // Returns overall platform statistics for the admin dashboard.
+    // Counts users, events, bookings, and total revenue from confirmed bookings.
     public function getStats()
     {
         return response()->json([
@@ -19,28 +18,25 @@ class AdminController extends Controller
                 'total_users' => User::count(),
                 'total_events' => Event::count(),
                 'total_bookings' => Booking::count(),
+                // Only sum revenue from confirmed (paid) bookings
                 'total_revenue' => Booking::where('status', 'confirmed')->sum('total_price'),
             ]
         ]);
     }
 
-    /**
-     * Get all users.
-     */
+    // Returns a list of all users including soft-deleted (suspended) ones.
+    // withTrashed() includes users that were soft-deleted from the system.
     public function getUsers()
     {
         $users = User::withTrashed()
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
-            'users' => $users
-        ]);
+        return response()->json(['users' => $users]);
     }
 
-    /**
-     * Toggle user active status.
-     */
+    // Toggles a user's active status (activate/deactivate).
+    // Uses the '!' operator to flip the current boolean value.
     public function toggleUserStatus(User $user)
     {
         $user->update(['is_active' => !$user->is_active]);
@@ -51,15 +47,12 @@ class AdminController extends Controller
         ]);
     }
 
-    /**
-     * Delete a user (Soft Delete).
-     */
+    // Soft deletes a user — does not permanently remove from DB.
+    // The user will still appear via withTrashed() but is suspended.
     public function deleteUser(User $user)
     {
-        $user->delete();
+        $user->delete(); // soft delete (uses Laravel's SoftDeletes trait)
 
-        return response()->json([
-            'message' => 'User suspended successfully'
-        ]);
+        return response()->json(['message' => 'User suspended successfully']);
     }
 }
