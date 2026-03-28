@@ -16,7 +16,6 @@ class BookingController extends Controller
             'event_id' => 'required|exists:events,id',
             'quantity' => 'required|integer|min:1',
             'phone' => 'nullable|string|max:20',
-            'transaction_id' => 'nullable|string|max:255',
             'payment_method' => 'nullable|string',
             'card_number' => 'nullable|string',
             'expiry' => 'nullable|string',
@@ -28,17 +27,23 @@ class BookingController extends Controller
         }
 
         $event = Event::findOrFail($request->event_id);
-        
+
         // Check capacity
         $bookedCount = Booking::where('event_id', $event->id)->sum('quantity');
         if ($bookedCount + $request->quantity > $event->capacity) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Not enough tickets available. Only ' . ($event->capacity - $bookedCount) . ' left.'
             ], 400);
         }
 
-        $total_price = $event->price * $request->quantity;
+        // Membership Discount Logic
+        $user = Auth::user();
+        $bookingCount = $user->bookings()->where('status', 'confirmed')->count();
+        $isMembershipMember = $bookingCount >= 2;
+        $discount = $isMembershipMember ? 0.1 : 0;
+        
+        $total_price = ($event->price * $request->quantity) * (1 - $discount);
 
         $booking = Booking::create([
             'user_id' => Auth::id(),

@@ -34,13 +34,9 @@ class AuthController extends Controller
             'role' => $role,
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = auth('api')->login($user);
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
-        ], 201);
+        return $this->respondWithToken($token, $user, 201);
     }
 
     public function login(Request $request)
@@ -50,15 +46,13 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $credentials = $request->only('email', 'password');
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Invalid credentials provided.'],
-            ]);
+        if (! $token = auth('api')->attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $user = auth('api')->user();
 
         // Force admin role if email matches
         if ($user->email === 'rahator44@gmail.com' && $user->role !== 'admin') {
@@ -67,16 +61,12 @@ class AuthController extends Controller
 
         $user->update(['last_login_at' => now()]);
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
-        ]);
+        return $this->respondWithToken($token, $user);
     }
 
-    public function logout(Request $request)
+    public function logout()
     {
-        $request->user()->currentAccessToken()->delete();
+        auth('api')->logout();
 
         return response()->json(['message' => 'Logged out successfully']);
     }
@@ -117,17 +107,33 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = auth('api')->login($user);
 
         $user->update(['last_login_at' => now()]);
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
+        return $this->respondWithToken($token, $user, 200, [
             'is_new_user' => $isNewUser,
             'message' => $isNewUser ? 'Account created successfully!' : 'Welcome back!'
         ]);
+    }
+
+    /**
+     * Get the token array structure.
+     *
+     * @param  string $token
+     * @param  User $user
+     * @param  int $status
+     * @param  array $additional
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function respondWithToken($token, $user, $status = 200, $additional = [])
+    {
+        return response()->json(array_merge([
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'user' => $user,
+        ], $additional), $status);
     }
     public function forgotPassword(Request $request)
     {

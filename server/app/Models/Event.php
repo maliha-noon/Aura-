@@ -14,12 +14,13 @@ class Event extends Model
         'description',
         'date',
         'location',
-        'city_country',
         'image',
         'price',
         'capacity',
         'category',
         'is_featured',
+        'chief_guest',
+        'tickets_sold',
     ];
 
     public function bookings()

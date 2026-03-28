@@ -29,7 +29,7 @@ interface EventData {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { isAdmin, isAuthenticated } = useAuth();
+  const { user, isAdmin, isAuthenticated } = useAuth();
 
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -255,59 +255,82 @@ export default function Home() {
 
       {/* Booking Modal */}
       <Modal show={showBooking} onHide={() => setShowBooking(false)} centered className="modal-glass-container">
-        <Modal.Header closeButton closeVariant="white" className="modal-glass border-0 px-4 pt-4">
-          <Modal.Title className="fw-bold">Book Ticket: {selectedEvent?.title}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="modal-glass p-4">
-          <div className="mb-4 p-3 rounded glassmorphism border-danger">
-            <p className="small mb-1 opacity-75">Payable via bKash (Merchant):</p>
-            <div className="d-flex justify-content-between align-items-center">
-              <span className="fw-bold fs-5 text-red">017XXXXXXXX</span>
-              <Button size="sm" variant="outline-danger" className="text-xs" onClick={() => copyToClipboard('017XXXXXXXX')}>
-                Copy Number
-              </Button>
-            </div>
-          </div>
-          <Form onSubmit={handleBookingSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Number of Tickets</Form.Label>
-              <Form.Control
-                type="number"
-                className="input-glass"
-                value={bookingData.quantity}
-                onChange={(e) => setBookingData({ ...bookingData, quantity: parseInt(e.target.value) })}
-                min="1"
-                required
-              />
-              <Form.Text className="text-light opacity-50">Total: BDT {(selectedEvent?.price || 0) * bookingData.quantity}</Form.Text>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Phone Number</Form.Label>
-              <Form.Control
-                type="text"
-                className="input-glass"
-                placeholder="01XXXXXXXXX"
-                value={bookingData.phone}
-                onChange={(e) => setBookingData({ ...bookingData, phone: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-4">
-              <Form.Label>bKash Transaction ID</Form.Label>
-              <Form.Control
-                type="text"
-                className="input-glass"
-                placeholder="Enter Transaction ID"
-                value={bookingData.transaction_id}
-                onChange={(e) => setBookingData({ ...bookingData, transaction_id: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Button type="submit" variant="danger" className="btn-premium w-100 py-3">
-              Confirm Transaction
-            </Button>
-          </Form>
-        </Modal.Body>
+          {!user?.is_subscribed ? (
+            <Modal.Body className="modal-glass p-0">
+              <div className="text-center py-5 bg-dark rounded-4 shadow-lg border border-danger border-opacity-25">
+                <div className="mb-4">
+                  <span className="display-1 animate-pulse">🔒</span>
+                </div>
+                <h3 className="text-white fw-bold mb-4 px-4 font-outfit" style={{ letterSpacing: '1px' }}>
+                  YOU need to subscribe our website first
+                </h3>
+                <p className="text-muted mb-5 px-5">
+                  Unlock access to all premium events and get your personal membership card by joining our community.
+                </p>
+                <div className="px-5 pb-4">
+                  <Button 
+                    variant="danger" 
+                    className="btn-premium w-100 py-3 fw-bold rounded-pill shadow"
+                    onClick={() => { setShowBooking(false); navigate('/subscription'); }}
+                  >
+                    GO TO SUBSCRIPTION
+                  </Button>
+                  <Button 
+                    variant="link" 
+                    className="text-muted mt-3 text-decoration-none w-100"
+                    onClick={() => setShowBooking(false)}
+                  >
+                    Maybe Later
+                  </Button>
+                </div>
+              </div>
+            </Modal.Body>
+          ) : (
+            <>
+              <Modal.Header closeButton closeVariant="white" className="modal-glass border-0 px-4 pt-4">
+                <Modal.Title className="fw-bold">Book Ticket: {selectedEvent?.title}</Modal.Title>
+              </Modal.Header>
+              <Modal.Body className="modal-glass p-4">
+                <div className="mb-4 p-3 rounded glassmorphism border-danger">
+                  <p className="small mb-1 opacity-75">Payable via bKash (Merchant):</p>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span className="fw-bold fs-5 text-red">017XXXXXXXX</span>
+                    <Button size="sm" variant="outline-danger" className="text-xs" onClick={() => copyToClipboard('017XXXXXXXX')}>
+                      Copy Number
+                    </Button>
+                  </div>
+                </div>
+                <Form onSubmit={handleBookingSubmit}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Number of Tickets</Form.Label>
+                    <Form.Control
+                      type="number"
+                      className="input-glass"
+                      value={bookingData.quantity}
+                      onChange={(e) => setBookingData({ ...bookingData, quantity: parseInt(e.target.value) })}
+                      min="1"
+                      required
+                    />
+                    <Form.Text className="text-light opacity-50">Total: BDT {(selectedEvent?.price || 0) * bookingData.quantity}</Form.Text>
+                  </Form.Group>
+                  <Form.Group className="mb-4">
+                    <Form.Label>Phone Number</Form.Label>
+                    <Form.Control
+                      type="text"
+                      className="input-glass"
+                      placeholder="01XXXXXXXXX"
+                      value={bookingData.phone}
+                      onChange={(e) => setBookingData({ ...bookingData, phone: e.target.value })}
+                      required
+                    />
+                  </Form.Group>
+                  <Button type="submit" variant="danger" className="btn-premium w-100 py-3 fw-bold">
+                    CONFIRM TRANSACTION
+                  </Button>
+                </Form>
+              </Modal.Body>
+            </>
+          )}
       </Modal>
 
     </div>
