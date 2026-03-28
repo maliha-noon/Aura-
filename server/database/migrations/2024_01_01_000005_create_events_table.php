@@ -19,13 +19,12 @@ class CreateEventsTable extends Migration
             $table->text('description');
             $table->dateTime('date');
             $table->string('location');
-            $table->longText('image')->nullable();
+            $table->string('city_country');
+            $table->string('image')->nullable();
             $table->decimal('price', 10, 2);
             $table->integer('capacity');
             $table->string('category')->default('General');
             $table->boolean('is_featured')->default(false);
-            $table->string('chief_guest')->nullable();
-            $table->integer('tickets_sold')->default(0);
             $table->timestamps();
         });
     }
