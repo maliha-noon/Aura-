@@ -222,6 +222,16 @@ class ApiClient {
     }
   }
 
+  async subscribe(data: any) {
+    try {
+      const response = await this.client.post('/api/subscribe', data);
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to subscribe' };
+    }
+  }
+
   async getMyBookings() {
     try {
       const response = await this.client.get('/api/my-bookings');
@@ -229,6 +239,36 @@ class ApiClient {
     } catch (error: any) {
       console.error(error);
       return { success: false, message: 'Failed to fetch bookings' };
+    }
+  }
+
+  async getRecentSubscribers() {
+    try {
+      const response = await this.client.get('/api/subscribers/recent');
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch subscribers' };
+    }
+  }
+
+  async submitReview(data: any) {
+    try {
+      const response = await this.client.post('/api/reviews', data);
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to submit review' };
+    }
+  }
+
+  async getReviews() {
+    try {
+      const response = await this.client.get('/api/reviews');
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch reviews' };
     }
   }
 }

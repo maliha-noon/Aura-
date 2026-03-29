@@ -1,5 +1,6 @@
-CREATE DATABASE IF NOT EXISTS `cse_3100`;
-USE `cse_3100`;
+DROP DATABASE IF EXISTS `cse_3100`;
+CREATE DATABASE IF NOT EXISTS `aura`;
+USE `aura`;
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `bookings`;
@@ -36,8 +37,10 @@ CREATE TABLE `events` (
     `date` TIMESTAMP NOT NULL,
     `location` VARCHAR(255) NOT NULL,
     `image` VARCHAR(255),
-    `price` DECIMAL(8, 2) NOT NULL,
+    `price` DECIMAL(10, 2) NOT NULL,
     `capacity` INTEGER NOT NULL,
+    `category` VARCHAR(100) DEFAULT 'General',
+    `is_featured` TINYINT(1) DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -48,7 +51,9 @@ CREATE TABLE `bookings` (
     `user_id` BIGINT UNSIGNED NOT NULL,
     `event_id` BIGINT UNSIGNED NOT NULL,
     `quantity` INTEGER NOT NULL,
-    `total_price` DECIMAL(10, 2) NOT NULL,
+    `total_price` DECIMAL(12, 2) NOT NULL,
+    `phone` VARCHAR(20) NOT NULL,
+    `transaction_id` VARCHAR(255) NOT NULL,
     `status` VARCHAR(255) DEFAULT 'confirmed',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

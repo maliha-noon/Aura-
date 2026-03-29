@@ -9,6 +9,10 @@ import ResetPassword from './views/ResetPassword';
 import AdminDashboard from './views/AdminDashboard';
 import Terms from './views/Terms';
 import Privacy from './views/Privacy';
+import Events from './views/Events';
+import About from './views/About';
+import Subscription from './views/Subscription';
+import AddEventForm from './views/AddEventForm';
 import { useAuth } from './context/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
@@ -22,6 +26,18 @@ const AdminProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) =>
   return <>{children}</>;
 };
 
+const SubscriberProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user, isAuthenticated, isAdmin } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  if (!user?.is_subscribed && !isAdmin) {
+    return <Navigate to="/subscription" replace />;
+  }
+  return <>{children}</>;
+};
+
+
 function App() {
   return (
     <>
@@ -34,6 +50,24 @@ function App() {
           }
         >
           <Route path={'/'} element={<Home />} />
+          <Route
+            path={'/events'}
+            element={
+              <SubscriberProtectedRoute>
+                <Events />
+              </SubscriberProtectedRoute>
+            }
+          />
+          <Route path={'/about'} element={<About />} />
+          <Route path={'/subscription'} element={<Subscription />} />
+          <Route
+            path={'/add-event'}
+            element={
+              <SubscriberProtectedRoute>
+                <AddEventForm />
+              </SubscriberProtectedRoute>
+            }
+          />
           <Route path={'/login'} element={<Login />} />
           <Route path={'/register'} element={<Register />} />
           <Route path={'/terms'} element={<Terms />} />

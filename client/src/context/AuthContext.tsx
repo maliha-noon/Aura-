@@ -6,6 +6,7 @@ interface User {
     email: string;
     phone?: string;
     role: string;
+    is_subscribed?: boolean;
 }
 
 interface AuthContextType {

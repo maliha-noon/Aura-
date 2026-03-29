@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Card, Table, Button, Badge, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Modal, Form } from 'react-bootstrap';
 import { FaUsers, FaCalendarAlt, FaTicketAlt, FaPowerOff, FaTrash, FaUserShield } from 'react-icons/fa';
 import ApiClient from '../api';
 import toast from 'react-hot-toast';
@@ -29,6 +29,17 @@ const AdminDashboard: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [showAddEventModal, setShowAddEventModal] = useState(false);
+    const [newEvent, setNewEvent] = useState({
+        title: '',
+        description: '',
+        date: '',
+        location: '',
+        price: '',
+        capacity: '',
+        image: ''
+    });
+    const [creating, setCreating] = useState(false);
 
     useEffect(() => {
         console.log("[ADMIN] useEffect triggered");
@@ -92,6 +103,30 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
+    const handleAddEvent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setCreating(true);
+        try {
+            const res = await api.createEvent({
+                ...newEvent,
+                price: Number(newEvent.price),
+                capacity: Number(newEvent.capacity)
+            });
+            if (res.success) {
+                toast.success('Event created successfully!');
+                setShowAddEventModal(false);
+                setNewEvent({ title: '', description: '', date: '', location: '', price: '', capacity: '', image: '' });
+                fetchDashboardData(true);
+            } else {
+                toast.error(res.message || 'Failed to create event');
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'An error occurred');
+        } finally {
+            setCreating(false);
+        }
+    };
+
     if (loading && !refreshing) {
         return (
             <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
@@ -104,15 +139,24 @@ const AdminDashboard: React.FC = () => {
         <Container className="py-5 mt-5">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2 className="text-white mb-0 fw-bold">Admin Dashboard</h2>
-                <Button
-                    variant="outline-danger"
-                    onClick={() => fetchDashboardData(true)}
-                    disabled={refreshing}
-                    className="d-flex align-items-center gap-2"
-                >
-                    {refreshing ? <Spinner size="sm" /> : <FaPowerOff style={{ transform: 'rotate(90deg)' }} />}
-                    {refreshing ? 'Refreshing...' : 'Refresh Data'}
-                </Button>
+                <div className="d-flex gap-2">
+                    <Button
+                        variant="danger"
+                        onClick={() => setShowAddEventModal(true)}
+                        className="d-flex align-items-center gap-2"
+                    >
+                        <FaCalendarAlt /> Add Event
+                    </Button>
+                    <Button
+                        variant="outline-danger"
+                        onClick={() => fetchDashboardData(true)}
+                        disabled={refreshing}
+                        className="d-flex align-items-center gap-2"
+                    >
+                        {refreshing ? <Spinner size="sm" /> : <FaPowerOff style={{ transform: 'rotate(90deg)' }} />}
+                        {refreshing ? 'Refreshing...' : 'Refresh Data'}
+                    </Button>
+                </div>
             </div>
 
             <Row className="mb-5">
@@ -230,6 +274,109 @@ const AdminDashboard: React.FC = () => {
                     </Table>
                 </Card.Body>
             </Card>
+
+            {/* Add Event Modal */}
+            <Modal show={showAddEventModal} onHide={() => setShowAddEventModal(false)} centered className="booking-modal">
+                <Modal.Header closeButton className="bg-dark text-white border-secondary">
+                    <Modal.Title className="fw-bold">Add New <span className="text-red">Event</span></Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="bg-dark text-white">
+                    <Form onSubmit={handleAddEvent}>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Event Title</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Enter title"
+                                value={newEvent.title}
+                                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                                className="bg-secondary bg-opacity-10 text-white border-secondary"
+                                required
+                            />
+                        </Form.Group>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Date</Form.Label>
+                                    <Form.Control
+                                        type="datetime-local"
+                                        value={newEvent.date}
+                                        onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                                        className="bg-secondary bg-opacity-10 text-white border-secondary"
+                                        required
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Location</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="e.g. Radisson Blu"
+                                        value={newEvent.location}
+                                        onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                                        className="bg-secondary bg-opacity-10 text-white border-secondary"
+                                        required
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Price (BDT)</Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        placeholder="300"
+                                        value={newEvent.price}
+                                        onChange={(e) => setNewEvent({ ...newEvent, price: e.target.value })}
+                                        className="bg-secondary bg-opacity-10 text-white border-secondary"
+                                        required
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Capacity</Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        placeholder="100"
+                                        value={newEvent.capacity}
+                                        onChange={(e) => setNewEvent({ ...newEvent, capacity: e.target.value })}
+                                        className="bg-secondary bg-opacity-10 text-white border-secondary"
+                                        required
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Image URL (Optional)</Form.Label>
+                            <Form.Control
+                                type="url"
+                                placeholder="https://..."
+                                value={newEvent.image}
+                                onChange={(e) => setNewEvent({ ...newEvent, image: e.target.value })}
+                                className="bg-secondary bg-opacity-10 text-white border-secondary"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Description</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                placeholder="Describe the event..."
+                                value={newEvent.description}
+                                onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                                className="bg-secondary bg-opacity-10 text-white border-secondary"
+                                required
+                            />
+                        </Form.Group>
+                        <Button variant="danger" type="submit" className="w-100 py-2 fw-bold" disabled={creating}>
+                            {creating ? <Spinner size="sm" className="me-2" /> : null}
+                            {creating ? 'Creating...' : 'CREATE EVENT'}
+                        </Button>
+                    </Form>
+                </Modal.Body>
+            </Modal>
         </Container>
     );
 };

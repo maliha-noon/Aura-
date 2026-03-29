@@ -31,6 +31,7 @@ class User extends Authenticatable
         'is_active',
         'login_attempts',
         'locked_until',
+        'is_subscribed',
     ];
 
     /**
@@ -53,10 +54,16 @@ class User extends Authenticatable
         'last_login_at' => 'datetime',
         'locked_until' => 'datetime',
         'is_active' => 'boolean',
+        'is_subscribed' => 'boolean',
     ];
 
     public function bookings()
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
     }
 }
