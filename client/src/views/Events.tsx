@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Button, Container, Badge, Modal } from 'react-bootstrap';
-import { FiMapPin, FiCalendar, FiClock } from 'react-icons/fi';
+import { Row, Col, Card, Button, Container, Badge, Modal, Pagination } from 'react-bootstrap';
+import { FiMapPin, FiCalendar, FiClock, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import ApiClient from '../api';
 import PaymentModal from '../components/PaymentModal';
 import toast from 'react-hot-toast';
@@ -24,6 +24,8 @@ interface Event {
 const Events: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
     const [bookingCount, setBookingCount] = useState(0);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [showBookingModal, setShowBookingModal] = useState(false);
@@ -32,11 +34,16 @@ const Events: React.FC = () => {
     const navigate = useNavigate();
     const api = React.useMemo(() => new ApiClient(), []);
 
-    const fetchEvents = React.useCallback(async () => {
+    const fetchEvents = React.useCallback(async (page: number = 1) => {
+        setLoading(true);
         try {
-            const response = await api.getEvents();
+            const response = await api.getEvents(page);
             if (response.success) {
-                setEvents(response.events);
+                setEvents(response.events || []);
+                if (response.pagination) {
+                    setCurrentPage(response.pagination.current_page);
+                    setLastPage(response.pagination.last_page);
+                }
             } else {
                 toast.error(response.message || 'Failed to fetch events');
             }
@@ -48,7 +55,7 @@ const Events: React.FC = () => {
     }, [api]);
 
     useEffect(() => {
-        fetchEvents();
+        fetchEvents(currentPage);
         const fetchMyBookings = async () => {
             if (user) {
                 const response = await api.getMyBookings();
@@ -58,7 +65,7 @@ const Events: React.FC = () => {
             }
         };
         fetchMyBookings();
-    }, [fetchEvents, api, user]);
+    }, [fetchEvents, api, user, currentPage]);
 
     const DigitalClock = () => {
         const [time, setTime] = React.useState(new Date());
@@ -141,16 +148,18 @@ const Events: React.FC = () => {
                     </style>
 
 
-                    {(isAdmin || user?.is_subscribed) && (
-                        <Button
-                            variant="danger"
-                            className="btn-premium px-4 py-2 mt-3"
-                            style={{ boxShadow: '0 5px 15px rgba(220,53,69,0.4)' }}
-                            onClick={() => navigate('/add-event')}
-                        >
-                            + ADD NEW EVENT
-                        </Button>
-                    )}
+                    <div className="d-flex justify-content-center mt-3">
+                        {(isAdmin || user?.is_subscribed) && (
+                            <Button
+                                variant="danger"
+                                className="btn-premium px-4 py-2"
+                                style={{ boxShadow: '0 5px 15px rgba(220,53,69,0.4)' }}
+                                onClick={() => navigate('/add-event')}
+                            >
+                                + ADD NEW EVENT
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <Row className="g-4">
@@ -256,6 +265,67 @@ const Events: React.FC = () => {
                         </Col>
                     )}
                 </Row>
+
+                {lastPage > 1 && (
+                    <div className="d-flex justify-content-center mt-5">
+                        <Pagination className="premium-pagination">
+                            <Pagination.Prev 
+                                disabled={currentPage === 1} 
+                                onClick={() => setCurrentPage(prev => prev - 1)}
+                            >
+                                <FiChevronLeft className="me-1" /> Previous
+                            </Pagination.Prev>
+                            
+                            {[...Array(lastPage)].map((_, idx) => (
+                                <Pagination.Item
+                                    key={idx + 1}
+                                    active={idx + 1 === currentPage}
+                                    onClick={() => setCurrentPage(idx + 1)}
+                                >
+                                    {idx + 1}
+                                </Pagination.Item>
+                            ))}
+
+                            <Pagination.Next 
+                                disabled={currentPage === lastPage}
+                                onClick={() => setCurrentPage(prev => prev + 1)}
+                            >
+                                Next <FiChevronRight className="ms-1" />
+                            </Pagination.Next>
+                        </Pagination>
+
+                        <style>
+                            {`
+                            .premium-pagination .page-link {
+                                background: #1a1a1a;
+                                border: 1px solid #333;
+                                color: #fff;
+                                padding: 10px 20px;
+                                margin: 0 5px;
+                                border-radius: 8px;
+                                transition: all 0.3s ease;
+                                font-weight: 600;
+                            }
+                            .premium-pagination .page-item.active .page-link {
+                                background: #dc3545;
+                                border-color: #dc3545;
+                                color: #fff;
+                                box-shadow: 0 5px 15px rgba(220,53,69,0.4);
+                            }
+                            .premium-pagination .page-link:hover {
+                                background: #2d2d2d;
+                                border-color: #dc3545;
+                                color: #dc3545;
+                            }
+                            .premium-pagination .page-item.disabled .page-link {
+                                background: #111;
+                                border-color: #222;
+                                color: #444;
+                            }
+                            `}
+                        </style>
+                    </div>
+                )}
             </Container>
 
             {selectedEvent && (

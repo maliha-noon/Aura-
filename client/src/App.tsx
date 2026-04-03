@@ -17,6 +17,7 @@ import { useAuth } from './context/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
+import ScrollToTop from './components/ScrollToTop';
 
 const AdminProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAdmin } = useAuth();
@@ -41,6 +42,7 @@ const SubscriberProtectedRoute: React.FC<{ children: ReactNode }> = ({ children 
 function App() {
   return (
     <>
+      <ScrollToTop />
       <Routes>
         <Route
           element={
@@ -50,14 +52,7 @@ function App() {
           }
         >
           <Route path={'/'} element={<Home />} />
-          <Route
-            path={'/events'}
-            element={
-              <SubscriberProtectedRoute>
-                <Events />
-              </SubscriberProtectedRoute>
-            }
-          />
+          <Route path={'/events'} element={<Events />} />
           <Route path={'/about'} element={<About />} />
           <Route path={'/subscription'} element={<Subscription />} />
           <Route

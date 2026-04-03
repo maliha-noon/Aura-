@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Row, Col } from 'react-bootstrap';
+import { Modal, Button, Form } from 'react-bootstrap';
 import { FiMinus, FiPlus, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import ApiClient from '../api';
 
 interface Event {
@@ -22,15 +20,11 @@ interface PaymentModalProps {
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ show, onHide, event, isMember }) => {
     const [quantity, setQuantity] = useState(1);
-    const [paymentMethod, setPaymentMethod] = useState('Credit Card');
-    const [phoneNumber, setPhoneNumber] = useState('');
     const [cardData, setCardData] = useState({
         number: '',
         expiry: '',
         cvv: ''
     });
-    const { user } = useAuth();
-    const navigate = useNavigate();
     const api = new ApiClient();
 
     const discount = isMember ? 0.1 : 0;
@@ -46,12 +40,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ show, onHide, event, isMemb
         const bookingData = {
             event_id: event.id,
             quantity: quantity,
-            payment_method: paymentMethod,
-            // In a real app we wouldn't send card details like this, but following user request for demo
-            phone: phoneNumber,
-            card_number: cardData.number,
-            expiry: cardData.expiry,
-            cvv: cardData.cvv,
+            payment_method: 'bkash',
+            transaction_id: cardData.number, // Reusing cardData.number as the transaction ID input
             total_price: totalPrice
         };
 
@@ -75,24 +65,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ show, onHide, event, isMemb
                 <FiX className="text-white cursor-pointer fs-4" onClick={onHide} />
             </Modal.Header>
             <Modal.Body className="bg-dark p-4">
-                {!user?.is_subscribed ? (
-                    <div className="text-center py-5">
-                        <div className="mb-4">
-                            <span className="display-1">🔒</span>
-                        </div>
-                        <h4 className="text-white fw-bold mb-3">YOU need to subscribe our website first</h4>
-                        <p className="text-muted mb-4 px-4">
-                            Please check out our subscription side to unlock ticket bookings and exclusive discounts.
-                        </p>
-                        <Button 
-                            variant="danger" 
-                            className="btn-premium px-5 py-2 fw-bold"
-                            onClick={() => { onHide(); navigate('/subscription'); }}
-                        >
-                            Go to Subscription
-                        </Button>
-                    </div>
-                ) : (
                     <>
                         <div className="event-summary-card mb-4 p-4 rounded-4" style={{ backgroundColor: '#0f0f0f', border: '1px solid #222' }}>
                             <h5 className="text-red fw-bold mb-1 font-outfit">{event.title}</h5>
@@ -123,84 +95,63 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ show, onHide, event, isMemb
                             </div>
                         </div>
 
-                        <h6 className="text-white fw-bold mb-3">Select Payment Method</h6>
-                        <Row className="g-3 mb-4">
-                            {['bKash', 'Nagad', 'Credit Card'].map((method) => (
-                                <Col key={method} xs={4}>
-                                    <div
-                                        className={`payment-method-card text-center p-3 rounded-4 cursor-pointer transition-all ${paymentMethod === method ? 'active border-primary-red bg-opacity-10 bg-danger' : 'border-secondary border-opacity-25'}`}
-                                        onClick={() => setPaymentMethod(method)}
-                                        style={{ border: '1px solid', height: '90px' }}
-                                    >
-                                        <img src={`/images/payment/${method.toLowerCase().replace(' ', '-')}.png`} alt={method} style={{ height: '30px', filter: paymentMethod === method ? 'none' : 'grayscale(1)' }} className="mb-2" />
-                                        <div className={`small fw-bold ${paymentMethod === method ? 'text-white' : 'text-muted'}`}>{method}</div>
+                        <div className="payment-instructions-container p-4 rounded-4 position-relative overflow-hidden mb-4" style={{ backgroundColor: '#1a1a1a', border: '1px solid #dc354533' }}>
+                            <div className="text-center mb-4">
+                                <h5 className="text-white fw-bold mb-3 font-outfit">Enter Transaction ID</h5>
+                                <Form.Control
+                                    type="text"
+                                    className="input-glass text-center py-3 fs-5"
+                                    placeholder="Enter Transaction ID"
+                                    value={cardData.number} 
+                                    onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
+                                    required
+                                    style={{ letterSpacing: '2px', border: '2px solid #dc354544' }}
+                                />
+                            </div>
+
+                            <ul className="list-unstyled text-light small opacity-90 mb-0">
+                                <li className="mb-3 d-flex align-items-start gap-2">
+                                    <span className="text-red fs-4">•</span>
+                                    <span>Dial <strong className="text-warning">*247#</strong> or open your <strong className="text-warning">bKash App</strong>.</span>
+                                </li>
+                                <li className="mb-3 d-flex align-items-start gap-2">
+                                    <span className="text-red fs-4">•</span>
+                                    <span>Select the <strong className="text-warning">"Send Money"</strong> option.</span>
+                                </li>
+                                <li className="mb-3 d-flex align-items-center justify-content-between gap-2 p-2 rounded bg-black bg-opacity-50 border border-secondary border-opacity-25">
+                                    <div className="d-flex align-items-center gap-2">
+                                        <span className="text-red fs-4">•</span>
+                                        <span>Enter this recipient number: <strong className="text-red fs-5">01903247467</strong></span>
                                     </div>
-                                </Col>
-                            ))}
-                        </Row>
+                                    <Button size="sm" variant="outline-danger" className="py-1 px-3 text-xs" onClick={() => { navigator.clipboard.writeText('01903247467'); toast.success('Number Copied!'); }}>
+                                        Copy
+                                    </Button>
+                                </li>
+                                <li className="mb-3 d-flex align-items-start gap-2">
+                                    <span className="text-red fs-4">•</span>
+                                    <span>Amount to send: <strong className="text-red">{totalPrice} BDT</strong></span>
+                                </li>
+                                <li className="mb-3 d-flex align-items-start gap-2">
+                                    <span className="text-red fs-4">•</span>
+                                    <span>Enter your <strong className="text-warning">bKash PIN</strong> to confirm the transaction.</span>
+                                </li>
+                                <li className="mb-3 d-flex align-items-start gap-2">
+                                    <span className="text-red fs-4">•</span>
+                                    <span>You will receive a confirmation message with a <strong className="text-warning">Transaction ID</strong>.</span>
+                                </li>
+                                <li className="mb-0 d-flex align-items-start gap-2">
+                                    <span className="text-red fs-4">•</span>
+                                    <span>Enter the ID in the box above and click <strong className="text-warning">VERIFY</strong>.</span>
+                                </li>
+                            </ul>
+                        </div>
 
                         <Form onSubmit={handlePayment}>
-                            {(paymentMethod === 'bKash' || paymentMethod === 'Nagad') ? (
-                                <Form.Group className="mb-4">
-                                    <Form.Label className="text-muted small">Phone Number</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        className="input-glass"
-                                        placeholder="01XXX-XXXXXX"
-                                        value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
-                                        required
-                                    />
-                                </Form.Group>
-                            ) : (
-                                <>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label className="text-muted small">Card Number</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            className="input-glass"
-                                            placeholder="XXXX XXXX XXXX XXXX"
-                                            value={cardData.number}
-                                            onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
-                                            required
-                                        />
-                                    </Form.Group>
-                                    <Row>
-                                        <Col xs={6}>
-                                            <Form.Group className="mb-4">
-                                                <Form.Label className="text-muted small">Expiry</Form.Label>
-                                                <Form.Control
-                                                    type="text"
-                                                    className="input-glass"
-                                                    placeholder="MM/YY"
-                                                    value={cardData.expiry}
-                                                    onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
-                                                    required
-                                                />
-                                            </Form.Group>
-                                        </Col>
-                                        <Col xs={6}>
-                                            <Form.Group className="mb-4">
-                                                <Form.Label className="text-muted small">CVV</Form.Label>
-                                                <Form.Control
-                                                    type="password"
-                                                    className="input-glass"
-                                                    placeholder="..."
-                                                    value={cardData.cvv}
-                                                    onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
-                                                    required
-                                                />
-                                            </Form.Group>
-                                        </Col>
-                                    </Row>
-                                </>
-                            )}
-                            <Button type="submit" variant="danger" className="btn-premium w-100 py-3 fw-bold">
-                                PAY BDT {totalPrice}
+                            <Button type="submit" variant="danger" className="btn-premium w-100 py-3 fw-bold fs-5 shadow-lg animate-pulse" style={{ backgroundColor: '#b00' }}>
+                                VERIFY
                             </Button>
                         </Form>
                     </>
-                )}
             </Modal.Body>
         </Modal>
     );
