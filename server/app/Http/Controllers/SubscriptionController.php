@@ -14,9 +14,7 @@ class SubscriptionController extends Controller
             'amount' => 'required|numeric',
             'email' => 'required|email',
             'phone' => 'nullable|string',
-            'number' => 'nullable|string',
-            'expiry' => 'nullable|string',
-            'cvv' => 'nullable|string',
+            'transaction_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -32,11 +30,8 @@ class SubscriptionController extends Controller
                 'email' => $request->email,
                 'payment_method' => $request->payment_method,
                 'amount' => $request->amount,
-                'phone' => $request->phone ?? $request->number,
-                'transaction_id' => 'TXN-' . strtoupper(bin2hex(random_bytes(4))),
-                'card_number' => $request->number && $request->payment_method === 'card' ? substr($request->number, -4) : null,
-                'expiry' => $request->expiry,
-                'cvv' => $request->cvv,
+                'phone' => $request->phone,
+                'transaction_id' => $request->transaction_id,
                 'status' => 'active',
             ]);
 
