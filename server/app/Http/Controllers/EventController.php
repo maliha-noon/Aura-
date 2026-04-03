@@ -10,7 +10,11 @@ class EventController extends Controller
 {
     public function index()
     {
-        $events = Event::latest()->get();
+        // Only show events uploaded by subscribers or admins
+        $events = Event::whereHas('user', function ($query) {
+            $query->where('is_subscribed', true)->orWhere('role', 'admin');
+        })->orWhereNull('user_id')->latest()->paginate(9); // Inclusive of existing events for now
+        
         return response()->json(['success' => true, 'events' => $events]);
     }
 
@@ -32,7 +36,9 @@ class EventController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $event = Event::create($request->all());
+        $data = $request->all();
+        $data['user_id'] = auth()->id();
+        $event = Event::create($data);
 
         return response()->json([
             'success' => true,

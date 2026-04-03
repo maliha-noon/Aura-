@@ -29,7 +29,7 @@ const MainLayout: React.FC<BaseLayoutProps> = ({ children }) => {
               <Nav.Link as={Link} to="/">HOME</Nav.Link>
               <Nav.Link as={Link} to="/events">EVENT</Nav.Link>
               <Nav.Link as={Link} to="/about">ABOUT</Nav.Link>
-              <Nav.Link as={Link} to="/gallery">GALLERY</Nav.Link>
+              <Nav.Link as={Link} to="/subscription" className="text-warning fw-bold">SUBSCRIPTION</Nav.Link>
               {isAdmin && (
                 <Nav.Link as={Link} to="/admin" className="text-warning fw-bold">DASHBOARD</Nav.Link>
               )}
@@ -81,7 +81,7 @@ const MainLayout: React.FC<BaseLayoutProps> = ({ children }) => {
                 <li><Link to="/">Home</Link></li>
                 <li><Link to="/events">Events</Link></li>
                 <li><Link to="/about">About Us</Link></li>
-                <li><Link to="/gallery">Gallery</Link></li>
+                <li><Link to="/subscription">Subscription</Link></li>
               </ul>
             </Col>
             <Col lg={2} md={4} className="mb-4 mb-lg-0">

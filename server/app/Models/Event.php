@@ -20,7 +20,15 @@ class Event extends Model
         'capacity',
         'category',
         'is_featured',
+        'chief_guest',
+        'tickets_sold',
+        'user_id',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function bookings()
     {

@@ -23,10 +23,37 @@ interface User {
     created_at: string;
 }
 
+interface Event {
+    id: number;
+    title: string;
+    description: string;
+    date: string;
+    location: string;
+    price: number;
+    capacity: number;
+    category?: string;
+    image?: string;
+}
+
+interface Booking {
+    id: number;
+    user_id: number;
+    event_id: number;
+    quantity: number;
+    total_price: number;
+    status: string;
+    user?: User;
+    event?: Event;
+    created_at: string;
+}
+
 const AdminDashboard: React.FC = () => {
     console.log("[ADMIN] Mounting AdminDashboard...");
     const [stats, setStats] = useState<Stats | null>(null);
     const [users, setUsers] = useState<User[]>([]);
+    const [events, setEvents] = useState<Event[]>([]);
+    const [bookings, setBookings] = useState<Booking[]>([]);
+    const [activeTab, setActiveTab] = useState<'users' | 'events' | 'tickets'>('users');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showAddEventModal, setShowAddEventModal] = useState(false);
@@ -52,13 +79,17 @@ const AdminDashboard: React.FC = () => {
         else setLoading(true);
 
         try {
-            const [statsRes, usersRes] = await Promise.all([
+            const [statsRes, usersRes, eventsRes, bookingsRes] = await Promise.all([
                 api.getAdminStats(),
-                api.getAdminUsers()
+                api.getAdminUsers(),
+                api.getEvents(),
+                api.getAllBookings()
             ]);
 
             console.log("[ADMIN] Stats Response:", statsRes);
             console.log("[ADMIN] Users Response:", usersRes);
+            console.log("[ADMIN] Events Response:", eventsRes);
+            console.log("[ADMIN] Bookings Response:", bookingsRes);
 
             if (statsRes.success) {
                 setStats(statsRes.data || null);
@@ -68,9 +99,19 @@ const AdminDashboard: React.FC = () => {
 
             if (usersRes.success) {
                 setUsers(usersRes.data || []);
-                if (isManual) toast.success("Dashboard data refreshed!");
             } else {
                 toast.error(`Fetch Users Error: ${usersRes.message || 'Unknown error'}`);
+            }
+
+            if (eventsRes.success) {
+                setEvents(eventsRes.events || []);
+            }
+            if (bookingsRes.success) {
+                setBookings(bookingsRes.bookings || []);
+            }
+
+            if (isManual && usersRes.success) {
+                toast.success("Dashboard data refreshed!");
             }
         } catch (err: any) {
             console.error("[ADMIN] Data Fetch Error:", err);
@@ -159,118 +200,213 @@ const AdminDashboard: React.FC = () => {
                 </div>
             </div>
 
-            <Row className="mb-5">
-                <Col md={3}>
-                    <Card className="bg-dark text-white border-secondary shadow-sm">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-primary p-3 rounded-3 me-3">
-                                <FaUsers size={24} />
+            <Row className="mb-5 g-3">
+                <Col md={3} onClick={() => setActiveTab('users')} style={{ cursor: 'pointer' }}>
+                    <Card className={`h-100 bg-dark text-white shadow-sm ${activeTab === 'users' ? 'border-primary' : 'border-secondary'}`}>
+                        <Card.Body className="d-flex align-items-center p-3">
+                            <div className="bg-primary p-2 rounded-3 me-3">
+                                <FaUsers size={20} />
                             </div>
-                            <h5 className="mb-0 fw-bold text-primary">Users: {stats?.total_users || 0}</h5>
+                            <h6 className="mb-0 fw-bold text-primary">Users: {stats?.total_users || 0}</h6>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={3} onClick={() => setActiveTab('events')} style={{ cursor: 'pointer' }}>
+                    <Card className={`h-100 bg-dark text-white shadow-sm ${activeTab === 'events' ? 'border-success' : 'border-secondary'}`}>
+                        <Card.Body className="d-flex align-items-center p-3">
+                            <div className="bg-success p-2 rounded-3 me-3">
+                                <FaCalendarAlt size={20} />
+                            </div>
+                            <h6 className="mb-0 fw-bold text-success">Events: {stats?.total_events || 0}</h6>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={3} onClick={() => setActiveTab('tickets')} style={{ cursor: 'pointer' }}>
+                    <Card className={`h-100 bg-dark text-white shadow-sm ${activeTab === 'tickets' ? 'border-warning' : 'border-secondary'}`}>
+                        <Card.Body className="d-flex align-items-center p-3">
+                            <div className="bg-warning p-2 rounded-3 me-3">
+                                <FaTicketAlt size={20} />
+                            </div>
+                            <h6 className="mb-0 fw-bold text-warning">Bookings: {stats?.total_bookings || 0}</h6>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col md={3}>
-                    <Card className="bg-dark text-white border-secondary shadow-sm">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-success p-3 rounded-3 me-3">
-                                <FaCalendarAlt size={24} />
+                    <Card className="h-100 bg-dark text-white border-secondary shadow-sm">
+                        <Card.Body className="d-flex align-items-center p-3">
+                            <div className="bg-danger p-2 rounded-3 me-3">
+                                <FaUserShield size={20} />
                             </div>
-                            <h5 className="mb-0 fw-bold text-success">Events: {stats?.total_events || 0}</h5>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={3}>
-                    <Card className="bg-dark text-white border-secondary shadow-sm">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-warning p-3 rounded-3 me-3">
-                                <FaTicketAlt size={24} />
-                            </div>
-                            <h5 className="mb-0 fw-bold text-warning">Tickets: {stats?.total_bookings || 0}</h5>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={3}>
-                    <Card className="bg-dark text-white border-secondary shadow-sm">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-danger p-3 rounded-3 me-3">
-                                <FaUserShield size={24} />
-                            </div>
-                            <h5 className="mb-0 fw-bold text-success">Secure</h5>
+                            <h6 className="mb-0 fw-bold text-success">Secure</h6>
                         </Card.Body>
                     </Card>
                 </Col>
             </Row>
 
-            {/* User Management */}
+            {/* Content Based on Active Tab */}
             <Card className="bg-dark text-white border-secondary shadow-sm">
                 <Card.Header className="bg-transparent border-secondary py-3">
-                    <h5 className="mb-0 fw-bold">User Management</h5>
+                    <h5 className="mb-0 fw-bold">
+                        {activeTab === 'users' ? 'User Management' : activeTab === 'events' ? 'Event Details' : 'Ticket Sales (Bookings)'}
+                    </h5>
                 </Card.Header>
                 <Card.Body className="p-0">
                     <Table responsive hover variant="dark" className="mb-0">
-                        <thead className="bg-secondary bg-opacity-10 text-muted">
-                            <tr>
-                                <th className="ps-4">User</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Last Activity</th>
-                                <th className="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users?.map((user) => (
-                                <tr key={user.id} className="align-middle border-secondary border-opacity-25">
-                                    <td className="ps-4">
-                                        <div className="d-flex align-items-center">
-                                            <div className="avatar-small me-3 bg-secondary rounded-circle d-flex justify-content-center align-items-center text-white" style={{ width: '32px', height: '32px' }}>
-                                                {user.name?.charAt(0) || 'U'}
-                                            </div>
-                                            <div>
-                                                <div className="fw-bold">{user.name || 'Unknown User'}</div>
-                                                <small className="text-red">{user.email}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <Badge bg={user.role === 'admin' ? 'danger' : 'primary'} className="text-uppercase" style={{ fontSize: '10px' }}>
-                                            {user.role}
-                                        </Badge>
-                                    </td>
-                                    <td>
-                                        <Badge bg={user.is_active ? 'success' : 'secondary'} className="rounded-pill">
-                                            {user.is_active ? 'Active' : 'Suspended'}
-                                        </Badge>
-                                    </td>
-                                    <td>
-                                        <small className="text-red">
-                                            {user.last_login_at ? new Date(user.last_login_at).toLocaleString() : 'Never'}
-                                        </small>
-                                    </td>
-                                    <td className="text-center pe-4">
-                                        <div className="d-flex justify-content-center gap-2">
-                                            <Button
-                                                variant="outline-info"
-                                                size="sm"
-                                                onClick={() => handleToggleStatus(user.id)}
-                                                title={user.is_active ? 'Suspend User' : 'Activate User'}
-                                            >
-                                                <FaPowerOff />
-                                            </Button>
-                                            <Button
-                                                variant="outline-danger"
-                                                size="sm"
-                                                onClick={() => handleDeleteUser(user.id)}
-                                                disabled={user.role === 'admin'}
-                                                title="Delete User"
-                                            >
-                                                <FaTrash />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
+                        {activeTab === 'users' && (
+                            <>
+                                <thead className="bg-secondary bg-opacity-10 text-muted">
+                                    <tr>
+                                        <th className="ps-4">User</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Last Activity</th>
+                                        <th className="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {users?.map((user) => (
+                                        <tr key={user.id} className="align-middle border-secondary border-opacity-25">
+                                            <td className="ps-4">
+                                                <div className="d-flex align-items-center">
+                                                    <div className="avatar-small me-3 bg-secondary rounded-circle d-flex justify-content-center align-items-center text-white" style={{ width: '32px', height: '32px' }}>
+                                                        {user.name?.charAt(0) || 'U'}
+                                                    </div>
+                                                    <div>
+                                                        <div className="fw-bold">{user.name || 'Unknown User'}</div>
+                                                        <small className="text-red">{user.email}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <Badge bg={user.role === 'admin' ? 'danger' : 'primary'} className="text-uppercase" style={{ fontSize: '10px' }}>
+                                                    {user.role}
+                                                </Badge>
+                                            </td>
+                                            <td>
+                                                <Badge bg={user.is_active ? 'success' : 'secondary'} className="rounded-pill">
+                                                    {user.is_active ? 'Active' : 'Suspended'}
+                                                </Badge>
+                                            </td>
+                                            <td>
+                                                <small className="text-red">
+                                                    {user.last_login_at ? new Date(user.last_login_at).toLocaleString() : 'Never'}
+                                                </small>
+                                            </td>
+                                            <td className="text-center pe-4">
+                                                <div className="d-flex justify-content-center gap-2">
+                                                    <Button
+                                                        variant="outline-info"
+                                                        size="sm"
+                                                        onClick={() => handleToggleStatus(user.id)}
+                                                        title={user.is_active ? 'Suspend User' : 'Activate User'}
+                                                    >
+                                                        <FaPowerOff />
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        size="sm"
+                                                        onClick={() => handleDeleteUser(user.id)}
+                                                        disabled={user.role === 'admin'}
+                                                        title="Delete User"
+                                                    >
+                                                        <FaTrash />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {users.length === 0 && (
+                                        <tr>
+                                            <td colSpan={5} className="text-center py-4 text-muted">No users found</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </>
+                        )}
+
+                        {activeTab === 'events' && (
+                            <>
+                                <thead className="bg-secondary bg-opacity-10 text-muted">
+                                    <tr>
+                                        <th className="ps-4">Event Date</th>
+                                        <th>Title</th>
+                                        <th>Category / Type</th>
+                                        <th>Location</th>
+                                        <th>Price</th>
+                                        <th>Capacity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {events?.map((event) => (
+                                        <tr key={event.id} className="align-middle border-secondary border-opacity-25">
+                                            <td className="ps-4">
+                                                <Badge bg="success" className="rounded-pill">
+                                                    {new Date(event.date).toLocaleDateString()}
+                                                </Badge>
+                                            </td>
+                                            <td className="fw-bold text-white">{event.title}</td>
+                                            <td>
+                                                <Badge bg="info" className="text-uppercase" style={{ fontSize: '10px' }}>
+                                                    {event.category || 'Event'}
+                                                </Badge>
+                                            </td>
+                                            <td className="text-muted"><small>{event.location}</small></td>
+                                            <td className="text-red fw-bold">BDT {event.price}</td>
+                                            <td>{event.capacity} seats</td>
+                                        </tr>
+                                    ))}
+                                    {events.length === 0 && (
+                                        <tr>
+                                            <td colSpan={6} className="text-center py-4 text-muted">No events found</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </>
+                        )}
+
+                        {activeTab === 'tickets' && (
+                            <>
+                                <thead className="bg-secondary bg-opacity-10 text-muted">
+                                    <tr>
+                                        <th className="ps-4">Booking ID</th>
+                                        <th>Buyer Email</th>
+                                        <th>Buyer Name</th>
+                                        <th>Event Name</th>
+                                        <th>Qty</th>
+                                        <th>Status</th>
+                                        <th>Purchase Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {bookings?.map((booking) => (
+                                        <tr key={booking.id} className="align-middle border-secondary border-opacity-25">
+                                            <td className="ps-4 fw-bold">#{booking.id}</td>
+                                            <td>
+                                                <a href={`mailto:${booking.user?.email}`} className="text-red text-decoration-none fw-bold">
+                                                    {booking.user?.email || 'Unknown Email'}
+                                                </a>
+                                            </td>
+                                            <td className="text-white">{booking.user?.name || 'Unknown Name'}</td>
+                                            <td className="text-white">{booking.event?.title || 'Unknown Event'}</td>
+                                            <td><Badge bg="secondary">{booking.quantity}</Badge></td>
+                                            <td>
+                                                <Badge bg={booking.status === 'confirmed' ? 'success' : 'warning'}>
+                                                    {booking.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="text-muted">
+                                                <small>{new Date(booking.created_at).toLocaleDateString()}</small>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {bookings.length === 0 && (
+                                        <tr>
+                                            <td colSpan={7} className="text-center py-4 text-muted">No tickets booked yet</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </>
+                        )}
                     </Table>
                 </Card.Body>
             </Card>

@@ -18,7 +18,11 @@ class ApiClient {
     this.client.interceptors.request.use((config) => {
       const token = localStorage.getItem('access_token');
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        if (config.headers && typeof config.headers.set === 'function') {
+          config.headers.set('Authorization', `Bearer ${token}`);
+        } else {
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
       }
       return config;
     });
@@ -148,36 +152,6 @@ class ApiClient {
     toast.error(error.message || 'Something went wrong');
   }
 
-  // --- Event Methods ---
-
-  async getEvents() {
-    try {
-      const response = await this.client.get('/api/events');
-      return { success: true, data: response.data.data };
-    } catch (error: any) {
-      console.error(error);
-      return { success: false, message: 'Failed to fetch events' };
-    }
-  }
-
-  async bookEvent(eventId: number, paymentMethod: string, quantity: number = 1) {
-    try {
-      const response = await this.client.post('/api/bookings', {
-        event_id: eventId,
-        quantity,
-        payment_method: paymentMethod
-      });
-      return { success: true, ...response.data };
-    } catch (error: any) {
-      console.error(error);
-      let message = error.response?.data?.message || error.message || 'Booking failed';
-      if (error.response?.status === 401) {
-        message = 'Please login to book this event';
-      }
-      return { success: false, message, status: error.response?.status };
-    }
-  }
-
   // --- Admin Methods ---
 
   async getAdminStats() {
@@ -222,10 +196,19 @@ class ApiClient {
 
   // --- Event & Booking Methods ---
 
-  async getEvents() {
+  async getEvents(page: number = 1) {
     try {
-      const response = await this.client.get('/api/events');
-      return { success: true, events: response.data.events };
+      const response = await this.client.get(`/api/events?page=${page}`);
+      return { 
+        success: true, 
+        events: response.data.events.data,
+        pagination: {
+          current_page: response.data.events.current_page,
+          last_page: response.data.events.last_page,
+          total: response.data.events.total,
+          per_page: response.data.events.per_page
+        }
+      };
     } catch (error: any) {
       console.error(error);
       return { success: false, message: 'Failed to fetch events' };
@@ -234,7 +217,7 @@ class ApiClient {
 
   async createEvent(data: any) {
     try {
-      const response = await this.client.post('/api/admin/events', data);
+      const response = await this.client.post('/api/events', data);
       return { success: true, ...response.data };
     } catch (error: any) {
       console.error(error);
@@ -252,13 +235,79 @@ class ApiClient {
     }
   }
 
-  async getMyBookings() {
+  async subscribe(data: any) {
     try {
-      const response = await this.client.get('/api/my-bookings');
-      return { success: true, bookings: response.data.bookings };
+      const response = await this.client.post('/api/subscribe', data);
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to subscribe' };
+    }
+  }
+
+  async getMyBookings(page: number = 1) {
+    try {
+      const response = await this.client.get(`/api/my-bookings?page=${page}`);
+      return { 
+        success: true, 
+        bookings: response.data.bookings.data,
+        pagination: {
+          current_page: response.data.bookings.current_page,
+          last_page: response.data.bookings.last_page,
+          total: response.data.bookings.total
+        }
+      };
     } catch (error: any) {
       console.error(error);
       return { success: false, message: 'Failed to fetch bookings' };
+    }
+  }
+
+  async getAllBookings() {
+    try {
+      const response = await this.client.get('/api/admin/bookings');
+      return { success: true, bookings: response.data.bookings };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch all bookings' };
+    }
+  }
+
+  async getRecentSubscribers() {
+    try {
+      const response = await this.client.get('/api/subscribers/recent');
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch subscribers' };
+    }
+  }
+
+  async submitReview(data: any) {
+    try {
+      const response = await this.client.post('/api/reviews', data);
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to submit review' };
+    }
+  }
+
+  async getReviews(page: number = 1) {
+    try {
+      const response = await this.client.get(`/api/reviews?page=${page}`);
+      return { 
+        success: true, 
+        reviews: response.data.reviews.data,
+        pagination: {
+          current_page: response.data.reviews.current_page,
+          last_page: response.data.reviews.last_page,
+          total: response.data.reviews.total
+        }
+      };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch reviews' };
     }
   }
 }

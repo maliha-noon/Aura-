@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Button, Container, Row, Col, Card, Modal, Form, Spinner } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Button, Container, Row, Col, Card, Modal, Form, Spinner, Pagination } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ApiClient from '../api';
 import toast from 'react-hot-toast';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 const api = new ApiClient();
 
@@ -33,6 +34,8 @@ export default function Home() {
 
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
 
   // Modals state
   const [showBooking, setShowBooking] = useState(false);
@@ -48,14 +51,18 @@ export default function Home() {
 
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    fetchEvents(currentPage);
+  }, [currentPage]);
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (page: number = 1) => {
     setLoading(true);
-    const result = await api.getEvents();
+    const result = await api.getEvents(page);
     if (result.success) {
-      setEvents(result.events);
+      setEvents(result.events || []);
+      if (result.pagination) {
+          setCurrentPage(result.pagination.current_page);
+          setLastPage(result.pagination.last_page);
+      }
     }
     setLoading(false);
   };
@@ -193,6 +200,71 @@ export default function Home() {
               )}
             </Row>
           )}
+
+          {/* Pagination */}
+          {!loading && lastPage > 1 && (
+            <div className="d-flex justify-content-center mt-5 animate-fade-in-up">
+              <Pagination className="premium-pagination">
+                <Pagination.Prev 
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className="mx-1"
+                >
+                  <FiChevronLeft className="me-1" /> Previous
+                </Pagination.Prev>
+                
+                {[...Array(lastPage)].map((_, idx) => (
+                  <Pagination.Item
+                    key={idx + 1}
+                    active={currentPage === idx + 1}
+                    onClick={() => setCurrentPage(idx + 1)}
+                    className="mx-1"
+                  >
+                    {idx + 1}
+                  </Pagination.Item>
+                ))}
+
+                <Pagination.Next 
+                  disabled={currentPage === lastPage}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, lastPage))}
+                  className="mx-1"
+                >
+                  Next <FiChevronRight className="ms-1" />
+                </Pagination.Next>
+              </Pagination>
+
+              <style>
+                {`
+                .premium-pagination .page-link {
+                    background: #1a1a1a;
+                    border: 1px solid #333;
+                    color: #fff;
+                    padding: 10px 20px;
+                    margin: 0 5px;
+                    border-radius: 8px;
+                    transition: all 0.3s ease;
+                    font-weight: 600;
+                }
+                .premium-pagination .page-item.active .page-link {
+                    background: #dc3545;
+                    border-color: #dc3545;
+                    color: #fff;
+                    box-shadow: 0 5px 15px rgba(220,53,69,0.4);
+                }
+                .premium-pagination .page-link:hover {
+                    background: #2d2d2d;
+                    border-color: #dc3545;
+                    color: #dc3545;
+                }
+                .premium-pagination .page-item.disabled .page-link {
+                    background: #111;
+                    border-color: #222;
+                    color: #444;
+                }
+                `}
+              </style>
+            </div>
+          )}
         </Container>
       </section>
 
@@ -255,59 +327,80 @@ export default function Home() {
 
       {/* Booking Modal */}
       <Modal show={showBooking} onHide={() => setShowBooking(false)} centered className="modal-glass-container">
-        <Modal.Header closeButton closeVariant="white" className="modal-glass border-0 px-4 pt-4">
-          <Modal.Title className="fw-bold">Book Ticket: {selectedEvent?.title}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="modal-glass p-4">
-          <div className="mb-4 p-3 rounded glassmorphism border-danger">
-            <p className="small mb-1 opacity-75">Payable via bKash (Merchant):</p>
-            <div className="d-flex justify-content-between align-items-center">
-              <span className="fw-bold fs-5 text-red">017XXXXXXXX</span>
-              <Button size="sm" variant="outline-danger" className="text-xs" onClick={() => copyToClipboard('017XXXXXXXX')}>
-                Copy Number
-              </Button>
-            </div>
-          </div>
-          <Form onSubmit={handleBookingSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Number of Tickets</Form.Label>
-              <Form.Control
-                type="number"
-                className="input-glass"
-                value={bookingData.quantity}
-                onChange={(e) => setBookingData({ ...bookingData, quantity: parseInt(e.target.value) })}
-                min="1"
-                required
-              />
-              <Form.Text className="text-light opacity-50">Total: BDT {(selectedEvent?.price || 0) * bookingData.quantity}</Form.Text>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Phone Number</Form.Label>
-              <Form.Control
-                type="text"
-                className="input-glass"
-                placeholder="01XXXXXXXXX"
-                value={bookingData.phone}
-                onChange={(e) => setBookingData({ ...bookingData, phone: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-4">
-              <Form.Label>bKash Transaction ID</Form.Label>
-              <Form.Control
-                type="text"
-                className="input-glass"
-                placeholder="Enter Transaction ID"
-                value={bookingData.transaction_id}
-                onChange={(e) => setBookingData({ ...bookingData, transaction_id: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Button type="submit" variant="danger" className="btn-premium w-100 py-3">
-              Confirm Transaction
-            </Button>
-          </Form>
-        </Modal.Body>
+          <>
+              <Modal.Header closeButton closeVariant="white" className="modal-glass border-0 px-4 pt-4">
+                <Modal.Title className="fw-bold">Book Ticket: {selectedEvent?.title}</Modal.Title>
+              </Modal.Header>
+              <Modal.Body className="modal-glass p-4">
+                <div className="payment-instructions-container p-4 rounded-4 position-relative overflow-hidden mb-4" style={{ backgroundColor: '#1a1a1a', border: '1px solid #dc354533' }}>
+                  <div className="text-center mb-4">
+                    <h5 className="text-white fw-bold mb-3 font-outfit">Enter Transaction ID</h5>
+                    <Form.Control
+                      type="text"
+                      className="input-glass text-center py-3 fs-5"
+                      placeholder="Enter Transaction ID"
+                      value={bookingData.transaction_id}
+                      onChange={(e) => setBookingData({ ...bookingData, transaction_id: e.target.value })}
+                      required
+                      style={{ letterSpacing: '2px', border: '2px solid #dc354544' }}
+                    />
+                  </div>
+
+                  <ul className="list-unstyled text-light small opacity-90 mb-0">
+                    <li className="mb-3 d-flex align-items-start gap-2">
+                      <span className="text-red fs-4">•</span>
+                      <span>Dial <strong className="text-warning">*247#</strong> or open your <strong className="text-warning">bKash App</strong>.</span>
+                    </li>
+                    <li className="mb-3 d-flex align-items-start gap-2">
+                      <span className="text-red fs-4">•</span>
+                      <span>Select the <strong className="text-warning">"Send Money"</strong> option.</span>
+                    </li>
+                    <li className="mb-3 d-flex align-items-center justify-content-between gap-2 p-2 rounded bg-black bg-opacity-50 border border-secondary border-opacity-25">
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="text-red fs-4">•</span>
+                        <span>Enter this recipient number: <strong className="text-red fs-5">01903247467</strong></span>
+                      </div>
+                      <Button size="sm" variant="outline-danger" className="py-1 px-3 text-xs" onClick={() => copyToClipboard('01903247467')}>
+                        Copy
+                      </Button>
+                    </li>
+                    <li className="mb-3 d-flex align-items-start gap-2">
+                      <span className="text-red fs-4">•</span>
+                      <span>Amount to send: <strong className="text-red">{selectedEvent && (selectedEvent.price * bookingData.quantity)} BDT</strong></span>
+                    </li>
+                    <li className="mb-3 d-flex align-items-start gap-2">
+                      <span className="text-red fs-4">•</span>
+                      <span>Enter your <strong className="text-warning">bKash PIN</strong> to confirm the transaction.</span>
+                    </li>
+                    <li className="mb-3 d-flex align-items-start gap-2">
+                      <span className="text-red fs-4">•</span>
+                      <span>You will receive a confirmation message with a <strong className="text-warning">Transaction ID</strong>.</span>
+                    </li>
+                    <li className="mb-0 d-flex align-items-start gap-2">
+                      <span className="text-red fs-4">•</span>
+                      <span>Enter the ID in the box above and click <strong className="text-warning">VERIFY</strong>.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <Form onSubmit={handleBookingSubmit}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="small text-muted text-uppercase fw-bold">Tickets Quantity</Form.Label>
+                    <Form.Control
+                      type="number"
+                      className="input-glass"
+                      value={bookingData.quantity}
+                      onChange={(e) => setBookingData({ ...bookingData, quantity: parseInt(e.target.value) })}
+                      min="1"
+                      required
+                    />
+                  </Form.Group>
+                  <Button type="submit" variant="danger" className="btn-premium w-100 py-3 fw-bold animate-pulse" style={{ backgroundColor: '#b00' }}>
+                    VERIFY
+                  </Button>
+                </Form>
+              </Modal.Body>
+            </>
       </Modal>
 
     </div>

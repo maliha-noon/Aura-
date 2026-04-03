@@ -6,6 +6,7 @@ interface User {
     email: string;
     phone?: string;
     role: string;
+    is_subscribed?: boolean;
 }
 
 interface AuthContextType {
@@ -23,8 +24,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         const savedUser = localStorage.getItem('user');
-        if (savedUser) {
+        const token = localStorage.getItem('access_token');
+        if (savedUser && token) {
             setUser(JSON.parse(savedUser));
+        } else {
+            // If one is missing, clear both to be safe
+            localStorage.removeItem('user');
+            localStorage.removeItem('access_token');
+            setUser(null);
         }
     }, []);
 

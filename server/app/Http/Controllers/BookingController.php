@@ -16,11 +16,8 @@ class BookingController extends Controller
             'event_id' => 'required|exists:events,id',
             'quantity' => 'required|integer|min:1',
             'phone' => 'nullable|string|max:20',
-            'transaction_id' => 'nullable|string|max:255',
             'payment_method' => 'nullable|string',
-            'card_number' => 'nullable|string',
-            'expiry' => 'nullable|string',
-            'cvv' => 'nullable|string',
+            'transaction_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -28,17 +25,23 @@ class BookingController extends Controller
         }
 
         $event = Event::findOrFail($request->event_id);
-        
+
         // Check capacity
         $bookedCount = Booking::where('event_id', $event->id)->sum('quantity');
         if ($bookedCount + $request->quantity > $event->capacity) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Not enough tickets available. Only ' . ($event->capacity - $bookedCount) . ' left.'
             ], 400);
         }
 
-        $total_price = $event->price * $request->quantity;
+        // Membership Discount Logic
+        $user = Auth::user();
+        $bookingCount = $user->bookings()->where('status', 'confirmed')->count();
+        $isMembershipMember = $bookingCount >= 2;
+        $discount = $isMembershipMember ? 0.1 : 0;
+        
+        $total_price = ($event->price * $request->quantity) * (1 - $discount);
 
         $booking = Booking::create([
             'user_id' => Auth::id(),
@@ -46,11 +49,8 @@ class BookingController extends Controller
             'quantity' => $request->quantity,
             'total_price' => $total_price,
             'phone' => $request->phone ?? 'N/A',
-            'transaction_id' => $request->transaction_id ?? 'Mock-' . uniqid(),
-            'payment_method' => $request->payment_method,
-            'card_number' => $request->card_number,
-            'expiry' => $request->expiry,
-            'cvv' => $request->cvv,
+            'transaction_id' => $request->transaction_id,
+            'payment_method' => $request->payment_method ?? 'bkash',
             'status' => 'confirmed',
         ]);
 
@@ -63,7 +63,7 @@ class BookingController extends Controller
 
     public function index()
     {
-        $bookings = Auth::user()->bookings()->with('event')->latest()->get();
+        $bookings = Auth::user()->bookings()->with('event')->latest()->paginate(5);
         return response()->json(['success' => true, 'bookings' => $bookings]);
     }
 

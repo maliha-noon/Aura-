@@ -2,7 +2,6 @@ import React, { ReactNode } from 'react';
 import { Outlet, Route, Routes, Navigate } from 'react-router-dom';
 import MainLayout from './views/MainLayout';
 import Home from './views/Home';
-import Events from './views/Events';
 import Login from './views/Login';
 import Register from './views/Register';
 import ForgotPassword from './views/ForgotPassword';
@@ -12,12 +11,13 @@ import Terms from './views/Terms';
 import Privacy from './views/Privacy';
 import Events from './views/Events';
 import About from './views/About';
-import Gallery from './views/Gallery';
+import Subscription from './views/Subscription';
 import AddEventForm from './views/AddEventForm';
 import { useAuth } from './context/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
+import ScrollToTop from './components/ScrollToTop';
 
 const AdminProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAdmin } = useAuth();
@@ -27,10 +27,22 @@ const AdminProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) =>
   return <>{children}</>;
 };
 
+const SubscriberProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user, isAuthenticated, isAdmin } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  if (!user?.is_subscribed && !isAdmin) {
+    return <Navigate to="/subscription" replace />;
+  }
+  return <>{children}</>;
+};
+
 
 function App() {
   return (
     <>
+      <ScrollToTop />
       <Routes>
         <Route
           element={
@@ -42,8 +54,15 @@ function App() {
           <Route path={'/'} element={<Home />} />
           <Route path={'/events'} element={<Events />} />
           <Route path={'/about'} element={<About />} />
-          <Route path={'/gallery'} element={<Gallery />} />
-          <Route path={'/add-event'} element={<AddEventForm />} />
+          <Route path={'/subscription'} element={<Subscription />} />
+          <Route
+            path={'/add-event'}
+            element={
+              <SubscriberProtectedRoute>
+                <AddEventForm />
+              </SubscriberProtectedRoute>
+            }
+          />
           <Route path={'/login'} element={<Login />} />
           <Route path={'/register'} element={<Register />} />
           <Route path={'/terms'} element={<Terms />} />
