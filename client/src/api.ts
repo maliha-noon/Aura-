@@ -196,10 +196,19 @@ class ApiClient {
 
   // --- Event & Booking Methods ---
 
-  async getEvents() {
+  async getEvents(page: number = 1) {
     try {
-      const response = await this.client.get('/api/events');
-      return { success: true, events: response.data.events };
+      const response = await this.client.get(`/api/events?page=${page}`);
+      return { 
+        success: true, 
+        events: response.data.events.data,
+        pagination: {
+          current_page: response.data.events.current_page,
+          last_page: response.data.events.last_page,
+          total: response.data.events.total,
+          per_page: response.data.events.per_page
+        }
+      };
     } catch (error: any) {
       console.error(error);
       return { success: false, message: 'Failed to fetch events' };
@@ -236,10 +245,18 @@ class ApiClient {
     }
   }
 
-  async getMyBookings() {
+  async getMyBookings(page: number = 1) {
     try {
-      const response = await this.client.get('/api/my-bookings');
-      return { success: true, bookings: response.data.bookings };
+      const response = await this.client.get(`/api/my-bookings?page=${page}`);
+      return { 
+        success: true, 
+        bookings: response.data.bookings.data,
+        pagination: {
+          current_page: response.data.bookings.current_page,
+          last_page: response.data.bookings.last_page,
+          total: response.data.bookings.total
+        }
+      };
     } catch (error: any) {
       console.error(error);
       return { success: false, message: 'Failed to fetch bookings' };
@@ -276,10 +293,18 @@ class ApiClient {
     }
   }
 
-  async getReviews() {
+  async getReviews(page: number = 1) {
     try {
-      const response = await this.client.get('/api/reviews');
-      return { success: true, ...response.data };
+      const response = await this.client.get(`/api/reviews?page=${page}`);
+      return { 
+        success: true, 
+        reviews: response.data.reviews.data,
+        pagination: {
+          current_page: response.data.reviews.current_page,
+          last_page: response.data.reviews.last_page,
+          total: response.data.reviews.total
+        }
+      };
     } catch (error: any) {
       console.error(error);
       return { success: false, message: 'Failed to fetch reviews' };
