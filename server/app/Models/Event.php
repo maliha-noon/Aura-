@@ -14,6 +14,7 @@ class Event extends Model
         'description',
         'date',
         'location',
+        'city_country',
         'image',
         'price',
         'capacity',
@@ -21,7 +22,13 @@ class Event extends Model
         'is_featured',
         'chief_guest',
         'tickets_sold',
+        'user_id',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function bookings()
     {
