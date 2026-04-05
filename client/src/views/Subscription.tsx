@@ -13,7 +13,7 @@ const Subscription: React.FC = () => {
     const [isFlipped, setIsFlipped] = useState(false);
     const navigate = useNavigate();
     const api = React.useMemo(() => new ApiClient(), []);
-    const { user, login } = useAuth();
+    const { user } = useAuth();
     const [events, setEvents] = useState<any[]>([]);
     const [subscriberStats, setSubscriberStats] = useState<{ total_subscribers: number, recent_subscribers: any[] } | null>(null);
     const [myBookings, setMyBookings] = useState<any[]>([]);
@@ -135,9 +135,9 @@ const Subscription: React.FC = () => {
         setLoading(false);
 
         if (response.success) {
-            toast.success(response.message || 'Welcome to AURA++ PRO!');
-            login({ ...user, is_subscribed: true } as any, localStorage.getItem('access_token') || undefined);
-            navigate('/events');
+            toast.success(response.message || 'Verification submitted! You will receive an email once an admin approves it.', { duration: 5000 });
+            setTransactionId('');
+            setIsFlipped(false);
         } else {
             toast.error(response.message || 'Failed to subscribe');
         }
