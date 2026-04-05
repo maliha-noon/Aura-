@@ -18,14 +18,28 @@ class ApiClient {
     this.client.interceptors.request.use((config) => {
       const token = localStorage.getItem('access_token');
       if (token) {
-        if (config.headers && typeof config.headers.set === 'function') {
-          config.headers.set('Authorization', `Bearer ${token}`);
-        } else {
-          config.headers['Authorization'] = `Bearer ${token}`;
-        }
+        config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
     });
+
+    // Add interceptor to handle 401 errors (Unauthenticated)
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('access_token');
+          // Optional: We can show a toast here if it's not already shown by the caller
+          toast.error('Session expired. Please login again.');
+          // Redirect to login if on the client
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
   async login(email: string, password: string) {
@@ -164,6 +178,36 @@ class ApiClient {
     }
   }
 
+  async getAdminSubscriptions() {
+    try {
+      const response = await this.client.get('/api/admin/subscriptions');
+      return { success: true, subscriptions: response.data.subscriptions };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch subscriptions' };
+    }
+  }
+
+  async acceptSubscription(id: number) {
+    try {
+      const response = await this.client.post(`/api/admin/subscriptions/${id}/accept`);
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to accept subscription' };
+    }
+  }
+
+  async rejectSubscription(id: number) {
+    try {
+      const response = await this.client.post(`/api/admin/subscriptions/${id}/reject`);
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to reject subscription' };
+    }
+  }
+
   async getAdminUsers() {
     try {
       const response = await this.client.get('/api/admin/users');
@@ -283,6 +327,34 @@ class ApiClient {
     }
   }
 
+  async getNotifications() {
+    try {
+      const response = await this.client.get('/api/notifications');
+      return { success: true, notifications: response.data.notifications, unread_count: response.data.unread_count };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, notifications: [], unread_count: 0 };
+    }
+  }
+
+  async markNotificationRead(id: number) {
+    try {
+      await this.client.post(`/api/notifications/${id}/read`);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false };
+    }
+  }
+
+  async markAllNotificationsRead() {
+    try {
+      await this.client.post('/api/notifications/read-all');
+      return { success: true };
+    } catch (error: any) {
+      return { success: false };
+    }
+  }
+
   async submitReview(data: any) {
     try {
       const response = await this.client.post('/api/reviews', data);
@@ -308,6 +380,26 @@ class ApiClient {
     } catch (error: any) {
       console.error(error);
       return { success: false, message: 'Failed to fetch reviews' };
+    }
+  }
+
+  async getMyEvents() {
+    try {
+      const response = await this.client.get('/api/events/my-events');
+      return { success: true, events: response.data.events };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch your events' };
+    }
+  }
+
+  async getDashboardStats() {
+    try {
+      const response = await this.client.get('/api/subscriber/stats');
+      return { success: true, stats: response.data.stats };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch dashboard stats' };
     }
   }
 }

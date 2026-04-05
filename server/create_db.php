@@ -1,7 +1,7 @@
 <?php
 $host = '127.0.0.1';
 $user = 'root';
-$pass = '';
+$pass = 'password';
 
 try {
     $pdo = new PDO("mysql:host=$host", $user, $pass);

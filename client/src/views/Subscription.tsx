@@ -13,15 +13,24 @@ const Subscription: React.FC = () => {
     const [isFlipped, setIsFlipped] = useState(false);
     const navigate = useNavigate();
     const api = React.useMemo(() => new ApiClient(), []);
-    const { user, login } = useAuth();
+    const { user } = useAuth();
     const [events, setEvents] = useState<any[]>([]);
-    const [subscriberStats, setSubscriberStats] = useState<{ total_subscribers: number, recent_subscribers: any[] } | null>(null);
+    const [dashboardStats, setDashboardStats] = useState<{
+        total_bought: number,
+        events_attended: number,
+        total_sold: number,
+        total_revenue: number,
+        membership_status: string,
+        event_performance: any[]
+    } | null>(null);
     const [myBookings, setMyBookings] = useState<any[]>([]);
     const [bookingPage, setBookingPage] = useState(1);
     const [bookingLastPage, setBookingLastPage] = useState(1);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [bookingCount, setBookingCount] = useState(0);
     const [transactionId, setTransactionId] = useState('');
+    const [isPaused, setIsPaused] = useState(false);
+    const [subscriberStats, setSubscriberStats] = useState<{ total_subscribers: number, recent_subscribers: any[] } | null>(null);
     
     // Review State
     const [rating, setRating] = useState(5);
@@ -90,16 +99,28 @@ const Subscription: React.FC = () => {
                 setEvents(response.events.slice(0, 10));
             }
         };
-        const fetchStats = async () => {
+
+        const fetchPublicStats = async () => {
             const response = await api.getRecentSubscribers();
             if (response.success && response.total_subscribers !== undefined) {
                 setSubscriberStats(response);
             }
         };
 
+        const fetchDashboardStats = async () => {
+            if (user?.is_subscribed || user?.role === 'admin') {
+                const response = await api.getDashboardStats();
+                if (response.success && response.stats) {
+                    setDashboardStats(response.stats);
+                    setBookingCount(response.stats.total_bought || 0); 
+                }
+            }
+        };
+
         fetchEvents();
-        fetchStats();
-    }, [api]);
+        fetchPublicStats();
+        fetchDashboardStats();
+    }, [api, user]);
 
     useEffect(() => {
         fetchMyBookings(bookingPage);
@@ -110,12 +131,12 @@ const Subscription: React.FC = () => {
     }, [fetchAllReviews, reviewPage]);
 
     useEffect(() => {
-        if (events.length <= 1) return;
+        if (events.length <= 1 || isPaused) return;
         const interval = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % events.length);
         }, 3500);
         return () => clearInterval(interval);
-    }, [events]);
+    }, [events, isPaused]);
 
     const handleSubscribe = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -135,9 +156,13 @@ const Subscription: React.FC = () => {
         setLoading(false);
 
         if (response.success) {
-            toast.success(response.message || 'Welcome to AURA++ PRO!');
-            login({ ...user, is_subscribed: true } as any, localStorage.getItem('access_token') || undefined);
-            navigate('/events');
+            toast.success(response.message || 'Subscription Successful! Welcome to Aura++ Premium.', { duration: 5000 });
+            setTransactionId('');
+            setIsFlipped(false);
+            // Refresh the page to show the dashboard immediately
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
         } else {
             toast.error(response.message || 'Failed to subscribe');
         }
@@ -161,8 +186,10 @@ const Subscription: React.FC = () => {
 
     return (
         <Container fluid className="py-5 my-4" style={{ overflowX: 'hidden' }}>
-            <Row className="justify-content-center align-items-center min-vh-75 mx-auto" style={{ maxWidth: '1400px' }}>
-
+            
+            {/* HEROS SECTION: ONLY VISIBLE IF NOT SUBSCRIBED */}
+            {!user?.is_subscribed && (
+            <Row className="justify-content-center align-items-center min-vh-75 mx-auto animate-fade-in" style={{ maxWidth: '1400px' }}>
                 {/* Left: 3D Animated Event Showcase */}
                 <Col lg={7} md={6} className="d-none d-md-flex flex-column align-items-center justify-content-center px-5 mb-5 mb-md-0">
                     <div className="text-center mb-5 animate-fade-in-up">
@@ -172,57 +199,66 @@ const Subscription: React.FC = () => {
                         <p className="text-muted fs-5 opacity-75">Elevate your experience with Aura++ Premium.</p>
                     </div>
 
-                    <div className="carousel-container position-relative w-100 d-flex justify-content-center align-items-center" style={{ height: '450px', perspective: '1200px' }}>
+                    <div 
+                        className="carousel-container position-relative w-100 d-flex justify-content-center align-items-center" 
+                        style={{ height: '500px', perspective: '1200px' }}
+                        onMouseEnter={() => setIsPaused(true)}
+                        onMouseLeave={() => setIsPaused(false)}
+                    >
                         {events.length > 0 ? events.map((event, index) => {
-                            const offset = (index - currentIndex + events.length) % events.length;
-                            let transform = 'translateZ(-500px) scale(0.6)';
-                            let opacity = 0;
-                            let zIndex = 0;
+                            const offset = index - currentIndex;
+                            
+                            // Adjust offset for circular loop
+                            let adjustedOffset = offset;
+                            if (offset > events.length / 2) adjustedOffset -= events.length;
+                            if (offset < -events.length / 2) adjustedOffset += events.length;
 
-                            if (offset === 0) {
-                                transform = 'translateZ(0px) scale(1) translateX(0)';
-                                opacity = 1;
-                                zIndex = 3;
-                            } else if (offset === 1) {
-                                transform = 'translateZ(-150px) scale(0.85) translateX(35%) rotateY(-10deg)';
-                                opacity = 0.6;
-                                zIndex = 2;
-                            } else if (offset === events.length - 1) {
-                                transform = 'translateZ(-150px) scale(0.85) translateX(-35%) rotateY(10deg)';
-                                opacity = 0.6;
-                                zIndex = 2;
-                            }
+                            const absOffset = Math.abs(adjustedOffset);
+                            const isActive = adjustedOffset === 0;
+                            
+                            let transform = `translateX(${adjustedOffset * 110}%) translateZ(-${absOffset * 250}px) rotateY(${adjustedOffset * -25}deg)`;
+                            let opacity = Math.max(0, 1 - absOffset * 0.4);
+                            let zIndex = 10 - absOffset;
+
+                            if (absOffset > 2) opacity = 0; // Hide far away cards
 
                             return (
                                 <Card
                                     key={event.id}
-                                    className="position-absolute bg-dark text-white border-0 shadow-lg overflow-hidden glass-card"
+                                    className={`position-absolute bg-dark text-white border-0 shadow-lg overflow-hidden glass-card ${isActive ? 'active-card' : ''}`}
                                     style={{
                                         width: '100%',
-                                        maxWidth: '340px',
-                                        transition: 'all 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                                        maxWidth: adjustedOffset === 0 ? '360px' : '300px',
+                                        transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
                                         transform,
                                         opacity,
                                         zIndex,
                                         borderRadius: '24px',
+                                        cursor: 'pointer',
+                                        boxShadow: isActive ? '0 20px 40px rgba(230, 57, 70, 0.3)' : 'none'
                                     }}
+                                    onClick={() => setCurrentIndex(index)}
                                 >
-                                    <div style={{ height: '220px' }} className="overflow-hidden">
+                                    <div style={{ height: '220px' }} className="overflow-hidden position-relative">
                                         <Card.Img
                                             src={event.image || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000'}
                                             className="w-100 h-100 object-fit-cover hover-scale-img"
-                                            style={{ borderBottom: '4px solid #dc3545' }}
+                                            style={{ borderBottom: isActive ? '4px solid #dc3545' : 'none' }}
                                         />
+                                        <div className="card-overlay"></div>
                                     </div>
                                     <Card.Body className="text-center p-4 d-flex flex-column justify-content-center">
                                         <Badge bg="danger" className="mb-3 mx-auto px-3 py-2 shadow-sm rounded-pill pulse-red" style={{ width: 'fit-content', letterSpacing: '1px' }}>
                                             {event.category || 'Premium'}
                                         </Badge>
-                                        <h4 className="fw-bolder text-white mb-2 text-truncate">{event.title}</h4>
-                                        <p className="text-danger fst-italic mb-0 small">
+                                        <h4 className={`fw-bolder text-white mb-2 ${isActive ? '' : 'text-truncate'}`} style={{ fontSize: isActive ? '1.5rem' : '1.1rem' }}>
+                                            {event.title}
+                                        </h4>
+                                        <p className="text-danger fst-italic mb-0 small opacity-75">
                                             "{getMotivationalTheme(event.id)}"
                                         </p>
                                     </Card.Body>
+                                    {isActive && <div className="reflection"></div>}
                                 </Card>
                             );
                         }) : (
@@ -231,9 +267,8 @@ const Subscription: React.FC = () => {
                     </div>
                 </Col>
 
-                {/* Right: 3D Flip Card Subscription Form - Hidden if already subscribed */}
-                {!user?.is_subscribed && (
-                    <Col lg={4} md={6}>
+                {/* Right: 3D Flip Card Subscription Form */}
+                <Col lg={4} md={6}>
                     <div className={`flip-card ${isFlipped ? 'flipped' : ''}`}>
                         <div className="flip-card-inner">
                             {/* Front Side: Plan Overview */}
@@ -345,49 +380,76 @@ const Subscription: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </Col>
-                )}
+                    </Col>
             </Row>
+            )}
 
-            {/* Subscriber Details Section (3D Inspired) */}
+            {/* DASHBOARD SECTION: ONLY VISIBLE IF SUBSCRIBED */}
             {user?.is_subscribed && (
+            <div className="animate-fade-in-up">
+                {/* Dashboard Header Header */}
+                <Row className="justify-content-center mb-5 mt-4">
+                    <Col lg={10} className="text-center">
+                        <div className="glass-card p-5 border-glow-red bg-premium-dark shadow-lg">
+                            <h1 className="fw-bolder text-white display-3 mb-3 text-glow">
+                                Welcome, <span className="text-danger">{user?.name}</span>
+                            </h1>
+                            <p className="text-muted fs-5 mb-4">Your Aura++ Premium Dashboard — Manage your events and bookings with ease.</p>
+                            <div className="d-inline-flex gap-3 mt-2">
+                                <Badge bg="danger" className="px-4 py-2 rounded-pill pulse-red shadow-sm">PREMIUM MEMBER</Badge>
+                                <Badge bg="dark" className="px-4 py-2 rounded-pill border border-danger border-opacity-25">ID: #USER-{user?.id}</Badge>
+                            </div>
+                        </div>
+                    </Col>
+                </Row>
                 <Row className="justify-content-center mt-5 pt-5 animate-fade-in-up">
                     <Col lg={10}>
                         <div className="text-center mb-5">
-                            <h2 className="fw-bolder text-white text-glow">My Aura++ Journey</h2>
-                            <p className="text-muted">Tracking your exclusive event participation</p>
+                            <h2 className="fw-bolder text-white text-glow">Subscription Dashboard</h2>
+                            <p className="text-muted">Direct insights into your Aura++ participation and hosting</p>
                             <div className="mt-3 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-pill d-inline-block px-5 animate-float shadow-sm">
                                 <span className="text-white fw-bold" style={{ letterSpacing: '0.5px' }}>
-                                    ✨ Buy minimum <span className="text-danger">two tickets</span> and get <span className="text-warning">membership card</span> and enjoy <span className="text-success">10% discount</span> for every event's tickets ✨
+                                    ✨ {bookingCount >= 2 ? 'Elite Membership Active: enjoy 10% discount on all tickets!' : 'Buy 2+ tickets to unlock Elite Membership & 10% discount!'} ✨
                                 </span>
                             </div>
                         </div>
                         
                         <Row className="g-4 mb-5">
-                            <Col md={4}>
+                            <Col md={3}>
                                 <div className="stats-card p-4 text-center">
-                                    <h5 className="text-muted mb-2 text-uppercase ls-1">Tickets Bought</h5>
-                                    <h1 className="fw-bolder text-danger display-4">
-                                        {myBookings.reduce((sum, b) => sum + b.quantity, 0)}
+                                    <h5 className="text-muted mb-2 text-uppercase ls-1" style={{ fontSize: '0.8rem' }}>Tickets Bought</h5>
+                                    <h1 className="fw-bolder text-danger display-5">
+                                        {dashboardStats?.total_bought || 0}
                                     </h1>
                                 </div>
                             </Col>
-                            <Col md={4}>
+                            <Col md={3}>
                                 <div className="stats-card p-4 text-center">
-                                    <h5 className="text-muted mb-2 text-uppercase ls-1">Events Attended</h5>
-                                    <h1 className="fw-bolder text-white display-4">
-                                        {myBookings.length}
+                                    <h5 className="text-muted mb-2 text-uppercase ls-1" style={{ fontSize: '0.8rem' }}>Events Attended</h5>
+                                    <h1 className="fw-bolder text-white display-5">
+                                        {dashboardStats?.events_attended || 0}
                                     </h1>
                                 </div>
                             </Col>
-                            <Col md={4}>
+                            <Col md={3}>
                                 <div className="stats-card p-4 text-center">
-                                    <h5 className="text-muted mb-2 text-uppercase ls-1">Membership</h5>
-                                    {bookingCount >= 2 ? (
-                                        <Badge bg="warning" text="dark" className="px-4 py-2 mt-2 fw-bold pulse-red" style={{ fontSize: '1rem' }}>ELITE MEMBER</Badge>
-                                    ) : (
-                                        <Badge bg="success" className="px-4 py-2 mt-2" style={{ fontSize: '1rem' }}>Active PRO</Badge>
-                                    )}
+                                    <h5 className="text-muted mb-2 text-uppercase ls-1" style={{ fontSize: '0.8rem' }}>Tickets Sold</h5>
+                                    <h1 className="fw-bolder text-warning display-5">
+                                        {dashboardStats?.total_sold || 0}
+                                    </h1>
+                                </div>
+                            </Col>
+                            <Col md={3}>
+                                <div className="stats-card p-4 text-center">
+                                    <h5 className="text-muted mb-2 text-uppercase ls-1" style={{ fontSize: '0.8rem' }}>Membership</h5>
+                                    <Badge 
+                                        bg={dashboardStats?.total_bought || 0 >= 2 ? 'warning' : 'success'} 
+                                        text={dashboardStats?.total_bought || 0 >= 2 ? 'dark' : ''}
+                                        className="px-3 py-2 mt-2 fw-bold pulse-red" 
+                                        style={{ fontSize: '0.8rem' }}
+                                    >
+                                        {dashboardStats?.membership_status || 'ACTIVE'}
+                                    </Badge>
                                 </div>
                             </Col>
                         </Row>
@@ -417,8 +479,10 @@ const Subscription: React.FC = () => {
                             </div>
                         )}
 
-                        <div className="stats-card p-4 overflow-hidden shadow-lg border-opacity-10">
-                            <h4 className="fw-bold mb-4 px-3">Recent Event Bookings</h4>
+                        <div className="stats-card p-4 overflow-hidden shadow-lg border-opacity-10 mb-5">
+                            <h4 className="fw-bold mb-4 px-3 d-flex align-items-center">
+                                <span className="text-danger me-2">🎟️</span> Recent Event Bookings
+                            </h4>
                             <div className="table-responsive">
                                 <Table variant="dark" className="bg-transparent mb-0 align-middle">
                                     <thead>
@@ -477,11 +541,48 @@ const Subscription: React.FC = () => {
                                 </div>
                             )}
                         </div>
+
+                        <div className="stats-card p-4 overflow-hidden shadow-lg border-opacity-10">
+                            <h4 className="fw-bold mb-4 px-3 d-flex align-items-center">
+                                <span className="text-warning me-2">📊</span> My Hosted Events & Sales
+                            </h4>
+                            <div className="table-responsive">
+                                <Table variant="dark" className="bg-transparent mb-0 align-middle">
+                                    <thead>
+                                        <tr className="text-muted small text-uppercase" style={{ letterSpacing: '1px' }}>
+                                            <th className="ps-4">Event Title</th>
+                                            <th>Location</th>
+                                            <th>Category</th>
+                                            <th>Tickets Sold</th>
+                                            <th>Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {dashboardStats?.event_performance && dashboardStats.event_performance.length > 0 ? (
+                                            dashboardStats.event_performance.map((event: any) => (
+                                                <tr key={event.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <td className="ps-4 py-3 fw-bold text-white">{event.title}</td>
+                                                    <td className="small text-muted">{new Date(event.date).toLocaleDateString()}</td>
+                                                    <td><Badge bg="danger" className="bg-opacity-25 text-danger border border-danger border-opacity-25">{event.price} TK</Badge></td>
+                                                    <td className="text-warning fw-bold">{event.tickets_sold || 0} Sold</td>
+                                                    <td className="text-success fw-bold">{event.revenue || 0} TK</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={5} className="text-center py-5 text-muted opacity-50">You haven't hosted any events yet or no sales recorded.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </Table>
+                            </div>
+                        </div>
                     </Col>
                 </Row>
+            </div>
             )}
 
-            {/* Global Public Stats Footer */}
+            {/* Global Public Stats Footer - Only for non-subscribers */}
             {subscriberStats && !user?.is_subscribed && (
                 <Row className="justify-content-center mt-5 pt-4 border-top border-secondary border-opacity-10">
                     <Col lg={6} className="text-center">
@@ -500,9 +601,9 @@ const Subscription: React.FC = () => {
                 </Row>
             )}
 
-            {/* 3D Review Section */}
-            <Row className="justify-content-center mt-5 pt-5 mb-5">
-                <Col lg={8}>
+            {/* 3D Review Section - Visible to All */}
+            <Row className="justify-content-center mt-5 pt-5 mb-5 mx-auto" style={{ maxWidth: '1400px' }}>
+                <Col lg={10}>
                     <Card className="bg-dark text-white p-5 rounded-4 border-glow-red shadow-lg bg-premium-dark text-center">
                         <h2 className="fw-bolder mb-4 text-glow">Share Your Aura++ Experience</h2>
                         <p className="text-muted mb-5">Your feedback helps us create better events for everyone.</p>
@@ -513,7 +614,7 @@ const Subscription: React.FC = () => {
                                     <span 
                                         key={s} 
                                         className={`star-3d ${rating >= s ? 'active' : ''}`}
-                                        onClick={() => setRating(s)}
+                                        onClick={() => (user ? setRating(s) : toast.error('Please login to rate'))}
                                     >
                                         ★
                                     </span>
@@ -521,7 +622,7 @@ const Subscription: React.FC = () => {
                             </div>
                             <Form.Group className="mb-4">
                                 <Form.Control 
-                                    as="textarea" rows={4} required placeholder="Tell us what you think..." 
+                                    as="textarea" rows={3} required placeholder="Tell us what you think..." 
                                     className="review-input-glass"
                                     value={comment} onChange={(e) => setComment(e.target.value)}
                                 />
@@ -535,7 +636,7 @@ const Subscription: React.FC = () => {
                         </Form>
 
                         <div className="mt-5 pt-5 border-top border-secondary border-opacity-10">
-                            <h4 className="fw-bold mb-4">Recent Reviews</h4>
+                            <h4 className="fw-bold mb-4">Community Feedback</h4>
                             <Row className="g-3">
                                 {allReviews.length > 0 ? allReviews.map((rev, idx) => (
                                     <Col md={6} key={idx}>

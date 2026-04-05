@@ -381,3 +381,114 @@ h6,
 .pulse-red {
   animation: pulse-red 2s infinite ease-in-out;
 }
+
+/* 3D Carousel Detail Enhancements */
+.active-card {
+  border: 1px solid rgba(230, 57, 70, 0.4) !important;
+}
+
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.4));
+  pointer-events: none;
+}
+
+.reflection {
+  position: absolute;
+  bottom: -60px;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+  transform: perspective(400px) rotateX(60deg) scaleY(-1);
+  filter: blur(4px);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.carousel-container {
+  overflow: visible !important;
+}
+
+.star-3d {
+  font-size: 2rem;
+  cursor: pointer;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+.star-3d.active {
+  color: #ffc107;
+  text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+  transform: scale(1.2);
+}
+
+.review-input-glass {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  border-radius: 12px;
+  padding: 15px;
+}
+
+/* --- 3D & Premium About Page Utilities --- */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.tilt-card-3d {
+  transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.5s ease;
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+}
+
+.tilt-card-3d:hover {
+  transform: perspective(1000px) rotateX(4deg) rotateY(4deg) scale(1.02);
+  box-shadow: 0 20px 40px rgba(230, 57, 70, 0.2);
+}
+
+/* Floating Aura Orbs */
+.aura-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  opacity: 0.12;
+  animation: float-orb 20s infinite alternate ease-in-out;
+}
+
+.orb-red {
+  background: radial-gradient(circle, #e63946, transparent 70%);
+  width: 400px;
+  height: 400px;
+}
+
+.orb-purple {
+  background: radial-gradient(circle, #7209b7, transparent 70%);
+  width: 500px;
+  height: 500px;
+}
+
+@keyframes float-orb {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(100px, 50px) scale(1.2); }
+  100% { transform: translate(-50px, 150px) scale(0.9); }
+}
+
+.text-glow-white {
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.glass-3d {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02);
+}

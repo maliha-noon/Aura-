@@ -18,6 +18,12 @@ class EventController extends Controller
         return response()->json(['success' => true, 'events' => $events]);
     }
 
+    public function myEvents()
+    {
+        $events = Event::where('user_id', auth()->id())->latest()->get();
+        return response()->json(['success' => true, 'events' => $events]);
+    }
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
