@@ -13,6 +13,11 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        // Check if a trashed user exists with this email FIRST
+        if (User::onlyTrashed()->where('email', $request->email)->exists()) {
+            return response()->json(['message' => 'You have violated community rules'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -23,6 +28,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
+
 
         $role = ($request->email === 'rahator44@gmail.com') ? 'admin' : 'user';
 
@@ -47,6 +53,11 @@ class AuthController extends Controller
         ]);
 
         $credentials = $request->only('email', 'password');
+
+        // Check if the user is soft-deleted (banned)
+        if (User::onlyTrashed()->where('email', $request->email)->exists()) {
+            return response()->json(['message' => 'You have violated community rules'], 403);
+        }
 
         if (! $token = auth('api')->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -80,7 +91,12 @@ class AuthController extends Controller
             'provider' => 'nullable|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::withTrashed()->where('email', $request->email)->first();
+
+        if ($user && $user->trashed()) {
+            return response()->json(['message' => 'You have violated community rules'], 403);
+        }
+
         $isNewUser = false;
 
         // Logic to decide role based on email - The SQL Source of Truth
@@ -139,9 +155,13 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::withTrashed()->where('email', $request->email)->first();
         if (!$user) {
             return response()->json(['message' => 'If this email exists, a reset code has been sent.'], 200);
+        }
+
+        if ($user->trashed()) {
+            return response()->json(['message' => 'You have violated community rules'], 403);
         }
 
         // Generate a 6-digit code for simulation
