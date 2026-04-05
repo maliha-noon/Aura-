@@ -21,6 +21,8 @@ Route::middleware(['auth:api', 'check.admin'])->prefix('admin')->group(function 
     Route::post('/users/{user}/toggle', [\App\Http\Controllers\AdminController::class , 'toggleUserStatus']);
     Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class , 'deleteUser']);
     Route::get('/bookings', [\App\Http\Controllers\BookingController::class , 'getAllBookings']);
+    Route::get('/subscriptions', [\App\Http\Controllers\AdminController::class , 'getSubscriptions']);
+    Route::post('/subscriptions/{id}/verify', [\App\Http\Controllers\AdminController::class , 'verifySubscription']);
 });
 
 // Subscriber Event Management

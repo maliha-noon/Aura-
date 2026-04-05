@@ -14,9 +14,7 @@ class SubscriptionController extends Controller
             'amount' => 'required|numeric',
             'email' => 'required|email',
             'phone' => 'nullable|string',
-            'number' => 'nullable|string',
-            'expiry' => 'nullable|string',
-            'cvv' => 'nullable|string',
+            'transaction_id' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -27,29 +25,28 @@ class SubscriptionController extends Controller
             $user = $request->user();
             
             // Create Subscription Record
-            \App\Models\Subscription::create([
+            $subscription = \App\Models\Subscription::create([
                 'user_id' => $user->id,
                 'email' => $request->email,
                 'payment_method' => $request->payment_method,
                 'amount' => $request->amount,
-                'phone' => $request->phone ?? $request->number,
-                'transaction_id' => 'TXN-' . strtoupper(bin2hex(random_bytes(4))),
-                'card_number' => $request->number && $request->payment_method === 'card' ? substr($request->number, -4) : null,
-                'expiry' => $request->expiry,
-                'cvv' => $request->cvv,
-                'status' => 'active',
+                'phone' => $request->phone,
+                'transaction_id' => $request->transaction_id,
+                'status' => 'pending', // Set to pending for admin verification
             ]);
 
-            // Update User Status
-            $user->is_subscribed = true;
-            if ($request->has('email')) {
-                $user->email = $request->email;
+            // Notify Admin via Email
+            try {
+                \Illuminate\Support\Facades\Mail::to('rahator44@gmail.com')
+                    ->send(new \App\Mail\AdminSubscriptionVerify($subscription));
+            } catch (\Exception $e) {
+                // Log and continue
+                \Log::error("Admin notification failed: " . $e->getMessage());
             }
-            $user->save();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully subscribed to Aura++!',
+                'message' => 'Subscription request sent! Please wait for admin approval.',
                 'user' => $user
             ]);
         }
