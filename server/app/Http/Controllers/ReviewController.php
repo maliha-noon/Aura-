@@ -35,7 +35,7 @@ class ReviewController extends Controller
 
     public function index()
     {
-        $reviews = Review::with('user')->latest()->take(10)->get();
+        $reviews = Review::with('user')->latest()->paginate(4);
         return response()->json(['success' => true, 'reviews' => $reviews]);
     }
 }
