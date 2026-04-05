@@ -4,6 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
+use App\Models\Subscription;
+use App\Models\User;
+use App\Mail\AdminSubscriptionVerify;
+use App\Mail\UserSubscriptionResult;
 
 class SubscriptionController extends Controller
 {
@@ -24,27 +30,34 @@ class SubscriptionController extends Controller
         try {
             $user = $request->user();
             
-            // Create Subscription Record
-            \App\Models\Subscription::create([
+            // Create Subscription Record as PENDING
+            $subscription = Subscription::create([
                 'user_id' => $user->id,
                 'email' => $request->email,
                 'payment_method' => $request->payment_method,
                 'amount' => $request->amount,
                 'phone' => $request->phone,
                 'transaction_id' => $request->transaction_id,
-                'status' => 'active',
+                'status' => 'pending',
             ]);
 
-            // Update User Status
-            $user->is_subscribed = true;
+            // Save updated email on user if requested, but DO NOT activate them yet
             if ($request->has('email')) {
                 $user->email = $request->email;
+                $user->save();
             }
-            $user->save();
+
+            // Generate URLs
+            $acceptUrl = URL::signedRoute('subscription.verify.accept', ['id' => $subscription->id]);
+            $rejectUrl = URL::signedRoute('subscription.verify.reject', ['id' => $subscription->id]);
+
+            // Dispatch Email to Admin
+            $adminEmail = env('ADMIN_EMAIL', 'rahator44@gmail.com');
+            Mail::to($adminEmail)->send(new AdminSubscriptionVerify($subscription, $user, $acceptUrl, $rejectUrl));
 
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully subscribed to Aura++!',
+                'message' => 'Verification submitted! You will receive an email once an admin approves it.',
                 'user' => $user
             ]);
         }
@@ -54,6 +67,54 @@ class SubscriptionController extends Controller
                 'message' => 'Failed to process subscription: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function verifyAccept(Request $request, $id)
+    {
+        if (! $request->hasValidSignature()) {
+            abort(401, 'Invalid or expired link.');
+        }
+
+        $subscription = Subscription::findOrFail($id);
+        
+        if ($subscription->status !== 'pending') {
+            return response("This subscription has already been processed as: " . $subscription->status);
+        }
+
+        $subscription->status = 'active';
+        $subscription->save();
+
+        $user = User::findOrFail($subscription->user_id);
+        $user->is_subscribed = true;
+        $user->save();
+
+        // Notify user
+        Mail::to($user->email)->send(new UserSubscriptionResult($user, true));
+
+        return response("Subscription Accepted! User is now a premium member.");
+    }
+
+    public function verifyReject(Request $request, $id)
+    {
+        if (! $request->hasValidSignature()) {
+            abort(401, 'Invalid or expired link.');
+        }
+
+        $subscription = Subscription::findOrFail($id);
+
+        if ($subscription->status !== 'pending') {
+            return response("This subscription has already been processed as: " . $subscription->status);
+        }
+
+        $subscription->status = 'rejected';
+        $subscription->save();
+
+        $user = User::findOrFail($subscription->user_id);
+        
+        // Notify user
+        Mail::to($user->email)->send(new UserSubscriptionResult($user, false));
+
+        return response("Subscription Rejected! User has been notified.");
     }
 
     public function getRecentSubscribers()
@@ -81,3 +142,4 @@ class SubscriptionController extends Controller
         }
     }
 }
+
