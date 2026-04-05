@@ -74,7 +74,12 @@ export default function Home() {
       return;
     }
     setSelectedEvent(event);
-    setBookingData({ ...bookingData, event_id: event.id });
+    setBookingData({
+      event_id: event.id,
+      quantity: 1,
+      phone: '',
+      transaction_id: ''
+    });
     setShowBooking(true);
   };
 
