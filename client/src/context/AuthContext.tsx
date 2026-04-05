@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 interface User {
     id: number;
@@ -20,20 +20,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User | null>(null);
-
-    useEffect(() => {
+    const [user, setUser] = useState<User | null>(() => {
         const savedUser = localStorage.getItem('user');
         const token = localStorage.getItem('access_token');
         if (savedUser && token) {
-            setUser(JSON.parse(savedUser));
-        } else {
-            // If one is missing, clear both to be safe
-            localStorage.removeItem('user');
-            localStorage.removeItem('access_token');
-            setUser(null);
+            try {
+                return JSON.parse(savedUser);
+            } catch (e) {
+                console.error("Failed to parse saved user", e);
+                return null;
+            }
         }
-    }, []);
+        return null;
+    });
 
     const login = (newUser: User, token?: string) => {
         setUser(newUser);
