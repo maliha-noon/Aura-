@@ -283,6 +283,26 @@ class ApiClient {
     }
   }
 
+  async getAdminSubscriptions() {
+    try {
+      const response = await this.client.get('/api/admin/subscriptions');
+      return { success: true, subscriptions: response.data.subscriptions };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch subscriptions' };
+    }
+  }
+
+  async verifySubscription(id: number, status: string) {
+    try {
+      const response = await this.client.post(`/api/admin/subscriptions/${id}/verify`, { status });
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to verify subscription' };
+    }
+  }
+
   async submitReview(data: any) {
     try {
       const response = await this.client.post('/api/reviews', data);
