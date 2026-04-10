@@ -18,6 +18,13 @@ use Illuminate\Support\Facades\Route;
 //     return ['Laravel' => app()->version()];
 // });
 
-Route::get('/', function () {
-    return response()->json(['status' => 'Laravel API is running']);
-});
+Route::get('/{any?}', function () {
+    $path = public_path('index.html');
+    if (file_exists($path)) {
+        return file_get_contents($path);
+    }
+    return response()->json([
+        'status' => 'Laravel API is running',
+        'message' => 'React build (index.html) not found in public directory.'
+    ]);
+})->where('any', '^(?!api).*$');
