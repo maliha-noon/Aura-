@@ -28,9 +28,20 @@ const Events: React.FC = () => {
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [showBookingModal, setShowBookingModal] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [activeCategory, setActiveCategory] = useState<string>('All');
     const { user, isAdmin } = useAuth();
     const navigate = useNavigate();
     const api = React.useMemo(() => new ApiClient(), []);
+
+    const categories = React.useMemo(() => {
+        const cats = ['All', ...Array.from(new Set(events.map(e => e.category).filter(Boolean)))];
+        return cats;
+    }, [events]);
+
+    const filteredEvents = React.useMemo(() => {
+        if (activeCategory === 'All') return events;
+        return events.filter(e => e.category === activeCategory);
+    }, [events, activeCategory]);
 
     const fetchEvents = React.useCallback(async () => {
         try {
@@ -154,9 +165,25 @@ const Events: React.FC = () => {
                     )}
                 </div>
 
+                {/* Category Filter */}
+                <div className="d-flex flex-wrap justify-content-center gap-2 mb-5">
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveCategory(cat)}
+                            className={`btn btn-sm rounded-pill px-4 fw-bold ${
+                                activeCategory === cat ? 'btn-danger' : 'btn-outline-secondary text-white'
+                            }`}
+                            style={{ transition: 'all 0.2s' }}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+
                 <Row className="g-4">
-                    {events.length > 0 ? (
-                        events.map((event) => (
+                    {filteredEvents.length > 0 ? (
+                        filteredEvents.map((event) => (
                             <Col key={event.id} lg={4} md={6}>
                                 <Card
                                     className="h-100 bg-dark text-white border-0 overflow-hidden"
@@ -253,7 +280,8 @@ const Events: React.FC = () => {
                         ))
                     ) : (
                         <Col className="text-center py-5">
-                            <h3 className="text-muted">No events found</h3>
+                            <h3 className="text-muted">No events found for "{activeCategory}"</h3>
+                            <p className="text-secondary">Try selecting a different category above.</p>
                         </Col>
                     )}
                 </Row>
