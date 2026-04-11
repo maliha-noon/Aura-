@@ -84,4 +84,17 @@ class BookingController extends Controller
         $bookings = Booking::with(['user', 'event'])->latest()->get();
         return response()->json(['success' => true, 'bookings' => $bookings]);
     }
+
+    public function destroy($id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if (Auth::id() !== $booking->user_id && !Auth::user()->is_admin) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized to cancel this booking.'], 403);
+        }
+
+        $booking->delete();
+
+        return response()->json(['success' => true, 'message' => 'Booking cancelled successfully.']);
+    }
 }
