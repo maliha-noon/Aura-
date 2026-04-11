@@ -40,7 +40,9 @@ class AuthController extends Controller
             'role' => $role,
         ]);
 
-        $token = auth('api')->login($user);
+        /** @var \PHPOpenSourceSaver\JWTAuth\JWTGuard $guard */
+        $guard = auth('api');
+        $token = $guard->login($user);
 
         return $this->respondWithToken($token, $user, 201);
     }
@@ -123,7 +125,9 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = auth('api')->login($user);
+        /** @var \PHPOpenSourceSaver\JWTAuth\JWTGuard $guard */
+        $guard = auth('api');
+        $token = $guard->login($user);
 
         $user->update(['last_login_at' => now()]);
 
@@ -144,10 +148,12 @@ class AuthController extends Controller
      */
     protected function respondWithToken($token, $user, $status = 200, $additional = [])
     {
+        /** @var \PHPOpenSourceSaver\JWTAuth\JWTGuard $guard */
+        $guard = auth('api');
         return response()->json(array_merge([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'expires_in' => $guard->factory()->getTTL() * 60,
             'user' => $user,
         ], $additional), $status);
     }
