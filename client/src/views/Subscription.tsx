@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Spinner, Badge, Table, Pagination } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Spinner, Badge, Table } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import ApiClient from '../api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 const Subscription: React.FC = () => {
     const [loading, setLoading] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('bkash');
     const [email, setEmail] = useState('');
     const [amount] = useState(100);
     const [isFlipped, setIsFlipped] = useState(false);
@@ -17,19 +17,18 @@ const Subscription: React.FC = () => {
     const [events, setEvents] = useState<any[]>([]);
     const [subscriberStats, setSubscriberStats] = useState<{ total_subscribers: number, recent_subscribers: any[] } | null>(null);
     const [myBookings, setMyBookings] = useState<any[]>([]);
-    const [bookingPage, setBookingPage] = useState(1);
-    const [bookingLastPage, setBookingLastPage] = useState(1);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [bookingCount, setBookingCount] = useState(0);
-    const [transactionId, setTransactionId] = useState('');
-    
+
+    // Payment Extra Fields
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [cardData, setCardData] = useState({ number: '', expiry: '', cvv: '' });
+
     // Review State
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
     const [submittingReview, setSubmittingReview] = useState(false);
     const [allReviews, setAllReviews] = useState<any[]>([]);
-    const [reviewPage, setReviewPage] = useState(1);
-    const [reviewLastPage, setReviewLastPage] = useState(1);
 
     useEffect(() => {
         if (user) {
@@ -58,31 +57,6 @@ const Subscription: React.FC = () => {
         return uniqueThemes[id % uniqueThemes.length];
     };
 
-    const fetchMyBookings = React.useCallback(async (page: number = 1) => {
-        if (!user) return;
-        const response = await api.getMyBookings(page);
-        if (response.success && response.bookings) {
-            setMyBookings(response.bookings);
-            if (response.pagination) {
-                setBookingPage(response.pagination.current_page);
-                setBookingLastPage(response.pagination.last_page);
-            }
-            // For checking membership status, we might need a separate call or use total
-            setBookingCount(response.bookings.filter((b: any) => b.status === 'confirmed').length);
-        }
-    }, [api, user]);
-
-    const fetchAllReviews = React.useCallback(async (page: number = 1) => {
-        const response = await api.getReviews(page);
-        if (response.success && response.reviews) {
-            setAllReviews(response.reviews);
-            if (response.pagination) {
-                setReviewPage(response.pagination.current_page);
-                setReviewLastPage(response.pagination.last_page);
-            }
-        }
-    }, [api]);
-
     useEffect(() => {
         const fetchEvents = async () => {
             const response = await api.getEvents();
@@ -96,18 +70,27 @@ const Subscription: React.FC = () => {
                 setSubscriberStats(response);
             }
         };
+        const fetchMyBookings = async () => {
+            if (user) {
+                const response = await api.getMyBookings();
+                if (response.success && response.bookings) {
+                    setMyBookings(response.bookings);
+                    setBookingCount(response.bookings.filter((b: any) => b.status === 'confirmed').length);
+                }
+            }
+        };
+        const fetchAllReviews = async () => {
+            const response = await api.getReviews();
+            if (response.success && response.reviews) {
+                setAllReviews(response.reviews);
+            }
+        };
 
         fetchEvents();
         fetchStats();
-    }, [api]);
-
-    useEffect(() => {
-        fetchMyBookings(bookingPage);
-    }, [fetchMyBookings, bookingPage]);
-
-    useEffect(() => {
-        fetchAllReviews(reviewPage);
-    }, [fetchAllReviews, reviewPage]);
+        fetchMyBookings();
+        fetchAllReviews();
+    }, [api, user]);
 
     useEffect(() => {
         if (events.length <= 1) return;
@@ -127,10 +110,11 @@ const Subscription: React.FC = () => {
 
         setLoading(true);
         const response = await api.subscribe({ 
-            payment_method: 'bkash', 
+            payment_method: paymentMethod, 
             amount, 
             email,
-            transaction_id: transactionId
+            phone: phoneNumber,
+            ...cardData 
         });
         setLoading(false);
 
@@ -155,7 +139,9 @@ const Subscription: React.FC = () => {
         if (response.success) {
             toast.success('Review submitted!');
             setComment('');
-            fetchAllReviews(1);
+            // Refresh reviews
+            const res = await api.getReviews();
+            if (res.success) setAllReviews(res.reviews);
         }
     };
 
@@ -231,9 +217,8 @@ const Subscription: React.FC = () => {
                     </div>
                 </Col>
 
-                {/* Right: 3D Flip Card Subscription Form - Hidden if already subscribed */}
-                {!user?.is_subscribed && (
-                    <Col lg={4} md={6}>
+                {/* Right: 3D Flip Card Subscription Form */}
+                <Col lg={4} md={6}>
                     <div className={`flip-card ${isFlipped ? 'flipped' : ''}`}>
                         <div className="flip-card-inner">
                             {/* Front Side: Plan Overview */}
@@ -298,47 +283,81 @@ const Subscription: React.FC = () => {
                                             </Form.Text>
                                         </Form.Group>
 
-                                        <div className="payment-instructions-container p-4 rounded-4 position-relative overflow-hidden mb-4" style={{ backgroundColor: '#111', border: '1px solid #dc354533' }}>
-                                            <div className="text-center mb-4">
-                                                <h6 className="text-white fw-bold mb-2 small opacity-75">Enter Transaction ID</h6>
-                                                <Form.Control
-                                                    type="text"
-                                                    className="input-glass text-center py-2 fs-6"
-                                                    placeholder="Enter Transaction ID"
-                                                    value={transactionId}
-                                                    onChange={(e) => setTransactionId(e.target.value)}
-                                                    required
-                                                    style={{ border: '1px solid #dc354566' }}
-                                                />
-                                            </div>
+                                        <Form.Group className="mb-4">
+                                            <Form.Label className="small text-muted text-uppercase fw-bold">Payment Method</Form.Label>
+                                            <Form.Select 
+                                                className="input-glass py-3"
+                                                value={paymentMethod}
+                                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                            >
+                                                <option value="bkash">bKash (Personal/Merchant)</option>
+                                                <option value="nagad">Nagad (Personal/Merchant)</option>
+                                                <option value="card">Bank Card (Visa/Mastercard)</option>
+                                            </Form.Select>
+                                        </Form.Group>
 
-                                            <div className="p-2 mb-3 rounded bg-black bg-opacity-50 border border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
-                                                <div className="small">
-                                                    <span className="text-red me-1">•</span>
-                                                    Recipient Number: <strong className="text-red">01903247467</strong>
-                                                </div>
-                                                <Button size="sm" variant="outline-danger" className="py-0 px-2 text-xs" onClick={() => { navigator.clipboard.writeText('01903247467'); toast.success('Number Copied!'); }}>
-                                                    Copy
-                                                </Button>
+                                        {(paymentMethod === 'bkash' || paymentMethod === 'nagad') && (
+                                            <div className="animate-fade-in">
+                                                <Form.Group className="mb-4">
+                                                    <Form.Label className="small text-muted text-uppercase fw-bold">Phone Number</Form.Label>
+                                                    <Form.Control 
+                                                        type="text" required placeholder="01XXX-XXXXXX" className="input-glass py-3"
+                                                        value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)}
+                                                    />
+                                                </Form.Group>
                                             </div>
+                                        )}
 
-                                            <ul className="list-unstyled text-light x-small opacity-75 mb-0" style={{ fontSize: '0.75rem' }}>
-                                                <li className="mb-2"><span className="text-red">•</span> Dial <strong className="text-warning">*247#</strong> or go to your <strong className="text-warning">bKash App</strong></li>
-                                                <li className="mb-2"><span className="text-red">•</span> Select the <strong className="text-warning">"Send Money"</strong> option</li>
-                                                <li className="mb-2"><span className="text-red">•</span> Amount to send: <strong className="text-red">{amount} BDT</strong></li>
-                                                <li className="mb-2"><span className="text-red">•</span> Enter your <strong className="text-warning">PIN</strong> to confirm</li>
-                                                <li className="mb-0"><span className="text-red">•</span> Enter the <strong className="text-warning">Transaction ID</strong> above and click <strong className="text-warning">VERIFY</strong></li>
-                                            </ul>
+                                        {paymentMethod === 'card' && (
+                                            <div className="animate-fade-in">
+                                                <Form.Group className="mb-3">
+                                                    <Form.Label className="small text-muted text-uppercase fw-bold">Card Number</Form.Label>
+                                                    <Form.Control 
+                                                        type="text" required placeholder="XXXX XXXX XXXX XXXX" className="input-glass py-3"
+                                                        value={cardData.number} onChange={(e) => setCardData({...cardData, number: e.target.value})}
+                                                    />
+                                                </Form.Group>
+                                                <Row>
+                                                    <Col xs={6}>
+                                                        <Form.Group className="mb-4">
+                                                            <Form.Label className="small text-muted text-uppercase fw-bold">Expiry</Form.Label>
+                                                            <Form.Control 
+                                                                type="text" required placeholder="MM/YY" className="input-glass py-3"
+                                                                value={cardData.expiry} onChange={(e) => setCardData({...cardData, expiry: e.target.value})}
+                                                            />
+                                                        </Form.Group>
+                                                    </Col>
+                                                    <Col xs={6}>
+                                                        <Form.Group className="mb-4">
+                                                            <Form.Label className="small text-muted text-uppercase fw-bold">CVV</Form.Label>
+                                                            <Form.Control 
+                                                                type="password" required placeholder="***" className="input-glass py-3"
+                                                                value={cardData.cvv} onChange={(e) => setCardData({...cardData, cvv: e.target.value})}
+                                                            />
+                                                        </Form.Group>
+                                                    </Col>
+                                                </Row>
+                                            </div>
+                                        )}
+
+                                        <div className="p-3 mb-4 rounded-3 border border-secondary border-opacity-25 bg-black">
+                                            <div className="d-flex justify-content-between small text-muted">
+                                                <span>Subtotal</span>
+                                                <span>{amount} TK</span>
+                                            </div>
+                                            <div className="d-flex justify-content-between fw-bold mt-2">
+                                                <span>Total to Pay</span>
+                                                <span className="text-danger">{amount} TK</span>
+                                            </div>
                                         </div>
 
                                         <Button 
                                             variant="danger" 
                                             type="submit" 
-                                            className="w-100 py-3 fw-bold text-uppercase btn-premium animate-pulse"
+                                            className="w-100 py-3 fw-bold text-uppercase btn-premium mt-3"
                                             disabled={loading}
-                                            style={{ backgroundColor: '#b00' }}
                                         >
-                                            {loading ? <Spinner size="sm" className="me-2" /> : 'VERIFY'}
+                                            {loading ? <Spinner size="sm" className="me-2" /> : 'Confirm Payment'}
                                         </Button>
                                     </Form>
                                 </Card>
@@ -346,7 +365,6 @@ const Subscription: React.FC = () => {
                         </div>
                     </div>
                 </Col>
-                )}
             </Row>
 
             {/* Subscriber Details Section (3D Inspired) */}
@@ -447,35 +465,6 @@ const Subscription: React.FC = () => {
                                     </tbody>
                                 </Table>
                             </div>
-                            
-                            {/* Bookings Pagination */}
-                            {bookingLastPage > 1 && (
-                                <div className="d-flex justify-content-center mt-4">
-                                    <Pagination className="premium-pagination px-3 py-1 rounded-pill glassmorphism border border-white border-opacity-10">
-                                        <Pagination.Prev 
-                                            disabled={bookingPage === 1}
-                                            onClick={() => setBookingPage(prev => Math.max(prev - 1, 1))}
-                                        >
-                                            <FiChevronLeft size={16} />
-                                        </Pagination.Prev>
-                                        {[...Array(bookingLastPage)].map((_, idx) => (
-                                            <Pagination.Item
-                                                key={idx + 1}
-                                                active={bookingPage === idx + 1}
-                                                onClick={() => setBookingPage(idx + 1)}
-                                            >
-                                                {idx + 1}
-                                            </Pagination.Item>
-                                        ))}
-                                        <Pagination.Next 
-                                            disabled={bookingPage === bookingLastPage}
-                                            onClick={() => setBookingPage(prev => Math.min(prev + 1, bookingLastPage))}
-                                        >
-                                            <FiChevronRight size={16} />
-                                        </Pagination.Next>
-                                    </Pagination>
-                                </div>
-                            )}
                         </div>
                     </Col>
                 </Row>
@@ -549,35 +538,6 @@ const Subscription: React.FC = () => {
                                     </Col>
                                 )) : <p className="text-muted small">No reviews yet. Be the first to share!</p>}
                             </Row>
-
-                            {/* Reviews Pagination */}
-                            {reviewLastPage > 1 && (
-                                <div className="d-flex justify-content-center mt-4">
-                                    <Pagination className="premium-pagination px-3 py-1 rounded-pill glassmorphism border border-white border-opacity-10">
-                                        <Pagination.Prev 
-                                            disabled={reviewPage === 1}
-                                            onClick={() => setReviewPage(prev => Math.max(prev - 1, 1))}
-                                        >
-                                            <FiChevronLeft size={16} />
-                                        </Pagination.Prev>
-                                        {[...Array(reviewLastPage)].map((_, idx) => (
-                                            <Pagination.Item
-                                                key={idx + 1}
-                                                active={reviewPage === idx + 1}
-                                                onClick={() => setReviewPage(idx + 1)}
-                                            >
-                                                {idx + 1}
-                                            </Pagination.Item>
-                                        ))}
-                                        <Pagination.Next 
-                                            disabled={reviewPage === reviewLastPage}
-                                            onClick={() => setReviewPage(prev => Math.min(prev + 1, reviewLastPage))}
-                                        >
-                                            <FiChevronRight size={16} />
-                                        </Pagination.Next>
-                                    </Pagination>
-                                </div>
-                            )}
                         </div>
                     </Card>
                 </Col>

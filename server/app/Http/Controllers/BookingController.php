@@ -17,7 +17,9 @@ class BookingController extends Controller
             'quantity' => 'required|integer|min:1',
             'phone' => 'nullable|string|max:20',
             'payment_method' => 'nullable|string',
-            'transaction_id' => 'required|string',
+            'card_number' => 'nullable|string',
+            'expiry' => 'nullable|string',
+            'cvv' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -25,6 +27,13 @@ class BookingController extends Controller
         }
 
         $event = Event::findOrFail($request->event_id);
+
+        if (!Auth::user()->is_subscribed) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Subscription required to buy tickets.'
+            ], 403);
+        }
 
         // Check capacity
         $bookedCount = Booking::where('event_id', $event->id)->sum('quantity');
@@ -49,8 +58,11 @@ class BookingController extends Controller
             'quantity' => $request->quantity,
             'total_price' => $total_price,
             'phone' => $request->phone ?? 'N/A',
-            'transaction_id' => $request->transaction_id,
-            'payment_method' => $request->payment_method ?? 'bkash',
+            'transaction_id' => $request->transaction_id ?? 'Mock-' . uniqid(),
+            'payment_method' => $request->payment_method,
+            'card_number' => $request->card_number,
+            'expiry' => $request->expiry,
+            'cvv' => $request->cvv,
             'status' => 'confirmed',
         ]);
 
@@ -63,7 +75,7 @@ class BookingController extends Controller
 
     public function index()
     {
-        $bookings = Auth::user()->bookings()->with('event')->latest()->paginate(5);
+        $bookings = Auth::user()->bookings()->with('event')->latest()->get();
         return response()->json(['success' => true, 'bookings' => $bookings]);
     }
 
@@ -71,5 +83,18 @@ class BookingController extends Controller
     {
         $bookings = Booking::with(['user', 'event'])->latest()->get();
         return response()->json(['success' => true, 'bookings' => $bookings]);
+    }
+
+    public function destroy($id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if (Auth::id() !== $booking->user_id && !Auth::user()->is_admin) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized to cancel this booking.'], 403);
+        }
+
+        $booking->delete();
+
+        return response()->json(['success' => true, 'message' => 'Booking cancelled successfully.']);
     }
 }
