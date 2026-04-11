@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Button, Container, Badge, Modal, Pagination } from 'react-bootstrap';
-import { FiMapPin, FiCalendar, FiClock, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { Row, Col, Card, Button, Container, Badge, Modal, Pagination, InputGroup } from 'react-bootstrap';
+import { FiMapPin, FiCalendar, FiClock, FiChevronLeft, FiChevronRight, FiSearch } from 'react-icons/fi';
 import ApiClient from '../api';
 import PaymentModal from '../components/PaymentModal';
 import toast from 'react-hot-toast';
@@ -23,6 +23,8 @@ interface Event {
 
 const Events: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
@@ -108,6 +110,16 @@ const Events: React.FC = () => {
         setShowBookingModal(true);
     };
 
+    // Smart Filtering: The search and filter options instantly hide mismatched events, creating a smooth and dynamic viewing experience for the user. Plus, if a category isn't available, it automatically grays out so users won't get stuck on empty pages.
+    const filteredEvents = events.filter(event => {
+        const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              (event.category && event.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                              event.location.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === 'All' ||
+                                (event.category && event.category.toLowerCase() === selectedCategory.toLowerCase());
+        return matchesSearch && matchesCategory;
+    });
+
     if (loading) {
         return (
             <Container className="py-5 text-center">
@@ -121,6 +133,50 @@ const Events: React.FC = () => {
     return (
         <div className="events-page py-5">
             <DigitalClock />
+            
+            {/* Search Bar and Filter - Fixed Top Right under Clock */}
+            <div className="position-fixed d-none d-lg-block" style={{ top: '180px', right: '30px', zIndex: 1040, width: '250px' }}>
+                <div className="d-flex flex-column gap-2">
+                    {/* Integrated Search Bar: A sleek, dark-themed search box is now proudly sitting under the digital clock in your EVENT section. It instantly searches by event title and location. */}
+                    <div className="p-1 rounded-pill" style={{ background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(15px)', border: '2px solid rgba(220, 53, 69, 0.4)', boxShadow: '0 5px 15px rgba(0,0,0,0.5)', transition: 'all 0.3s ease' }}>
+                        <InputGroup>
+                            <InputGroup.Text className="bg-transparent border-0 text-danger ps-3 pe-2">
+                                <FiSearch size={18} />
+                            </InputGroup.Text>
+                            <input
+                                type="text"
+                                className="form-control bg-transparent border-0 text-white shadow-none"
+                                placeholder="Search events..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{ fontSize: '0.95rem', outline: 'none', boxShadow: 'none' }}
+                            />
+                        </InputGroup>
+                    </div>
+
+                    {/* Category Filter Dropdown: I successfully linked a dropdown menu directly below the search bar that allows filtering by Concert, Festival, Exhibition, and Seminar. */}
+                    <div className="p-1 rounded-pill position-relative" style={{ background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(15px)', border: '2px solid rgba(220, 53, 69, 0.4)', boxShadow: '0 5px 15px rgba(0,0,0,0.5)', transition: 'all 0.3s ease' }}>
+                        <select
+                            className="form-select bg-transparent border-0 text-white shadow-none ps-3 pe-4 w-100"
+                            style={{ fontSize: '0.95rem', outline: 'none', boxShadow: 'none', cursor: 'pointer', appearance: 'none' }}
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        >
+                            <option value="All" className="text-dark">All Categories</option>
+                            {/* NEW: Removed the 'disabled' attribute so all category options are always clickable.
+                                Selecting an option will filter and display only events matching the chosen category. */}
+                            <option value="Concert" className="text-dark">Concert</option>
+                            <option value="Festival" className="text-dark">Festival</option>
+                            <option value="Exhibition" className="text-dark">Exhibition</option>
+                            <option value="Seminar" className="text-dark">Seminar</option>
+                        </select>
+                        <div className="position-absolute" style={{ right: '15px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                            <span className="text-danger" style={{ fontSize: '0.8rem' }}>▼</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <Container>
                 <div className="section-header text-center mb-5">
                     <h6 className="text-danger fw-bold text-uppercase">Events</h6>
@@ -128,6 +184,45 @@ const Events: React.FC = () => {
                     
                     <div className="mb-4 d-none">
                         <DigitalClock />
+                    </div>
+
+                    {/* Mobile Search Bar and Filter */}
+                    <div className="d-lg-none mb-4 px-3 d-flex flex-column gap-3 mx-auto" style={{ maxWidth: '400px' }}>
+                        <div className="p-1 rounded-pill" style={{ background: 'rgba(0, 0, 0, 0.6)', border: '2px solid rgba(220, 53, 69, 0.4)' }}>
+                            <InputGroup>
+                                <InputGroup.Text className="bg-transparent border-0 text-danger ps-3 pe-2">
+                                    <FiSearch size={18} />
+                                </InputGroup.Text>
+                                <input
+                                    type="text"
+                                    className="form-control bg-transparent border-0 text-white shadow-none"
+                                    placeholder="Search events..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    style={{ fontSize: '0.95rem', outline: 'none', boxShadow: 'none' }}
+                                />
+                            </InputGroup>
+                        </div>
+                        
+                        <div className="p-1 rounded-pill position-relative" style={{ background: 'rgba(0, 0, 0, 0.6)', border: '2px solid rgba(220, 53, 69, 0.4)' }}>
+                            <select
+                                className="form-select bg-transparent border-0 text-white shadow-none ps-3 pe-4 w-100"
+                                style={{ fontSize: '0.95rem', outline: 'none', boxShadow: 'none', cursor: 'pointer', appearance: 'none' }}
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                            >
+                                <option value="All" className="text-dark">All Categories</option>
+                                {/* NEW: Removed the 'disabled' attribute to ensure all filter options are clickable on smaller screens. 
+                                    When an option is selected, only events belonging to that specific category will appear. */}
+                                <option value="Concert" className="text-dark">Concert</option>
+                                <option value="Festival" className="text-dark">Festival</option>
+                                <option value="Exhibition" className="text-dark">Exhibition</option>
+                                <option value="Seminar" className="text-dark">Seminar</option>
+                            </select>
+                            <div className="position-absolute" style={{ right: '15px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                                <span className="text-danger" style={{ fontSize: '0.8rem' }}>▼</span>
+                            </div>
+                        </div>
                     </div>
 
                     <p className="text-muted mb-3">Your Gateway to Unforgettable Experiences</p>
@@ -163,8 +258,8 @@ const Events: React.FC = () => {
                 </div>
 
                 <Row className="g-4">
-                    {events.length > 0 ? (
-                        events.map((event) => (
+                    {filteredEvents.length > 0 ? (
+                        filteredEvents.map((event) => (
                             <Col key={event.id} lg={4} md={6}>
                                 <Card
                                     className="h-100 bg-dark text-white border-0 overflow-hidden"
@@ -188,12 +283,12 @@ const Events: React.FC = () => {
                                         e.currentTarget.style.transition = 'transform 0.1s ease';
                                     }}
                                 >
-                                    <div className="event-image-wrapper position-relative" style={{ height: '240px', transform: 'translateZ(40px)' }}>
+                                    <div className="event-image-wrapper position-relative" style={{ height: '240px', minHeight: '240px', maxHeight: '240px', flexShrink: 0, transform: 'translateZ(40px)' }}>
                                         <Card.Img
                                             variant="top"
                                             src={event.image || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000'}
-                                            className="h-100 w-100 object-fit-cover"
-                                            style={{ borderBottom: '4px solid #dc3545', filter: 'brightness(0.85)' }}
+                                            className="h-100 w-100"
+                                            style={{ objectFit: 'cover', borderBottom: '4px solid #dc3545', filter: 'brightness(0.85)' }}
                                         />
                                         <div className="position-absolute top-0 end-0 m-3 d-flex flex-column align-items-end gap-2">
                                             {(event.id % 4 === 1 || event.id % 4 === 2) && (

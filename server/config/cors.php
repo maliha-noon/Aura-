@@ -19,9 +19,9 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [],
+    'allowed_origins' => ['*'],
 
-    'allowed_origins_patterns' => ['/^http:\/\/(localhost|127\.0\.0\.1|192\.168\..*|10\..*|172\.(1[6-9]|2[0-9]|3[0-1])\..*):.*$/'],
+    'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
 
