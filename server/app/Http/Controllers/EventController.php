@@ -48,6 +48,19 @@ class EventController extends Controller
             ]);
         }
 
+        // Notify Admins
+        $user = auth()->user();
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            if ($user && $admin->id === $user->id) continue;
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'title'   => '🔔 New Event Created',
+                'message' => 'A new event "' . $event->title . '" has been created by ' . ($user ? $user->name : 'Unknown'),
+                'type'    => 'info',
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Event created successfully',
