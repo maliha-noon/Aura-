@@ -193,6 +193,30 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
+    const handleAcceptBooking = async (id: number) => {
+        if (window.confirm('Are you sure you want to approve this booking? An email will be sent to the user immediately.')) {
+            const res = await api.acceptBooking(id);
+            if (res.success) {
+                toast.success(res.message);
+                fetchDashboardData(true);
+            } else {
+                toast.error(res.message);
+            }
+        }
+    };
+
+    const handleRejectBooking = async (id: number) => {
+        if (window.confirm('Are you sure you want to reject this booking? An email will be sent to the user.')) {
+            const res = await api.rejectBooking(id);
+            if (res.success) {
+                toast.success(res.message || 'Booking rejected');
+                fetchDashboardData(true);
+            } else {
+                toast.error(res.message);
+            }
+        }
+    };
+
     const handleAddEvent = async (e: React.FormEvent) => {
         e.preventDefault();
         setCreating(true);
@@ -429,6 +453,7 @@ const AdminDashboard: React.FC = () => {
                                         <th>Qty</th>
                                         <th>Status</th>
                                         <th>Purchase Date</th>
+                                        <th className="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -450,6 +475,19 @@ const AdminDashboard: React.FC = () => {
                                             </td>
                                             <td className="text-muted">
                                                 <small>{new Date(booking.created_at).toLocaleDateString()}</small>
+                                            </td>
+                                            <td className="text-center pe-4">
+                                                {booking.status === 'pending' && (
+                                                    <div className="d-flex justify-content-center gap-2">
+                                                        <Button variant="outline-success" size="sm" onClick={() => handleAcceptBooking(booking.id)}>
+                                                            Accept
+                                                        </Button>
+                                                        <Button variant="outline-danger" size="sm" onClick={() => handleRejectBooking(booking.id)}>
+                                                            Reject
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                                {booking.status !== 'pending' && <span className="text-muted small">Processed</span>}
                                             </td>
                                         </tr>
                                     ))}
