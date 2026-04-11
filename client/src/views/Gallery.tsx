@@ -62,11 +62,20 @@ const Gallery: React.FC = () => {
                                 </div>
                                 <div className="gallery-caption text-center">
                                     <h2 className="gallery-title font-outfit mb-2">{event.title}</h2>
+                                    {event.category && (
+                                        <Badge bg="danger" className="px-3 py-1 rounded-pill mb-2">{event.category}</Badge>
+                                    )}
                                     <div className="view-details-link text-red fw-bold text-uppercase">View Details</div>
                                 </div>
                             </div>
                         </Col>
                     ))}
+                    {events.length === 0 && (
+                        <Col className="text-center py-5">
+                            <h3 className="text-muted">No gallery items yet</h3>
+                            <p className="text-secondary">Events will appear here once added.</p>
+                        </Col>
+                    )}
                 </Row>
             </Container>
         </div>

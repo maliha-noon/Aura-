@@ -23,7 +23,9 @@ class BookingController extends Controller
             'quantity' => 'required|integer|min:1',
             'phone' => 'nullable|string|max:20',
             'payment_method' => 'nullable|string',
-            'transaction_id' => 'required|string',
+            'card_number' => 'nullable|string',
+            'expiry' => 'nullable|string',
+            'cvv' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -31,6 +33,13 @@ class BookingController extends Controller
         }
 
         $event = Event::findOrFail($request->event_id);
+
+        if (!Auth::user()->is_subscribed) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Subscription required to buy tickets.'
+            ], 403);
+        }
 
         // Check capacity
         $bookedCount = Booking::where('event_id', $event->id)->sum('quantity');
@@ -89,7 +98,7 @@ class BookingController extends Controller
 
     public function index()
     {
-        $bookings = Auth::user()->bookings()->with('event')->latest()->paginate(5);
+        $bookings = Auth::user()->bookings()->with('event')->latest()->get();
         return response()->json(['success' => true, 'bookings' => $bookings]);
     }
 

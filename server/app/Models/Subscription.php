@@ -15,7 +15,6 @@ class Subscription extends Model
         'payment_method',
         'amount',
         'phone',
-        'transaction_id',
         'card_number',
         'expiry',
         'cvv',

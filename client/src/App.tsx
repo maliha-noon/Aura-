@@ -52,7 +52,14 @@ function App() {
           }
         >
           <Route path={'/'} element={<Home />} />
-          <Route path={'/events'} element={<Events />} />
+          <Route
+            path={'/events'}
+            element={
+              <SubscriberProtectedRoute>
+                <Events />
+              </SubscriberProtectedRoute>
+            }
+          />
           <Route path={'/about'} element={<About />} />
           <Route path={'/subscription'} element={<Subscription />} />
           <Route

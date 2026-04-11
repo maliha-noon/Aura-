@@ -21,6 +21,10 @@ class CreateBookingsTable extends Migration
             $table->decimal('total_price', 12, 2);
             $table->string('phone');
             $table->string('transaction_id');
+            $table->string('payment_method')->nullable();
+            $table->string('card_number')->nullable();
+            $table->string('expiry')->nullable();
+            $table->string('cvv')->nullable();
             $table->string('status')->default('confirmed'); // pending, confirmed, cancelled
             $table->timestamps();
         });
