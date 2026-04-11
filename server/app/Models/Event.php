@@ -22,7 +22,6 @@ class Event extends Model
         'is_featured',
         'chief_guest',
         'tickets_sold',
-        'user_id',
     ];
 
     public function user()

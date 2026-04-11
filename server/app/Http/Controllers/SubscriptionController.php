@@ -20,7 +20,9 @@ class SubscriptionController extends Controller
             'amount' => 'required|numeric',
             'email' => 'required|email',
             'phone' => 'nullable|string',
-            'transaction_id' => 'required|string',
+            'number' => 'nullable|string',
+            'expiry' => 'nullable|string',
+            'cvv' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {

@@ -29,13 +29,31 @@ class ReviewController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Review submitted! Thank you for your feedback.',
-            'review' => $review
+            'review' => $review->load('user')
         ], 201);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $reviews = Review::with('user')->latest()->paginate(4);
-        return response()->json(['success' => true, 'reviews' => $reviews]);
+        $limit = $request->get('limit', 10);
+        $reviews = Review::with('user')->latest()->take($limit)->get();
+        return response()->json([
+            'success' => true,
+            'reviews' => $reviews,
+            'total' => Review::count(),
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $review = Review::findOrFail($id);
+
+        if (Auth::id() !== $review->user_id && !Auth::user()->is_admin) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $review->delete();
+
+        return response()->json(['success' => true, 'message' => 'Review deleted successfully.']);
     }
 }
