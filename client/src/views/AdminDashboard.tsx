@@ -21,6 +21,7 @@ interface User {
     is_active: boolean;
     last_login_at: string | null;
     created_at: string;
+    deleted_at?: string | null;
 }
 
 interface Event {
@@ -47,13 +48,26 @@ interface Booking {
     created_at: string;
 }
 
+interface SubscriptionData {
+    id: number;
+    user_id: number;
+    email: string;
+    transaction_id: string;
+    amount: number;
+    status: string;
+    payment_method: string;
+    created_at: string;
+    user?: User;
+}
+
 const AdminDashboard: React.FC = () => {
     console.log("[ADMIN] Mounting AdminDashboard...");
     const [stats, setStats] = useState<Stats | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
-    const [activeTab, setActiveTab] = useState<'users' | 'events' | 'tickets'>('users');
+    const [subscriptions, setSubscriptions] = useState<SubscriptionData[]>([]);
+    const [activeTab, setActiveTab] = useState<'users' | 'events' | 'tickets' | 'subscriptions'>('users');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showAddEventModal, setShowAddEventModal] = useState(false);
@@ -83,7 +97,7 @@ const AdminDashboard: React.FC = () => {
                 api.getAdminStats(),
                 api.getAdminUsers(),
                 api.getEvents(),
-                api.getAllBookings()
+                api.getAllBookings(),
             ]);
 
             console.log("[ADMIN] Stats Response:", statsRes);
@@ -120,6 +134,17 @@ const AdminDashboard: React.FC = () => {
             setLoading(false);
             setRefreshing(false);
         }
+
+        // Fetch subscriptions separately so it never blocks other data
+        try {
+            const subsRes = await api.getAdminSubscriptions();
+            console.log("[ADMIN] Subs Response:", subsRes);
+            if (subsRes.success) {
+                setSubscriptions((subsRes as any).subscriptions || []);
+            }
+        } catch (err: any) {
+            console.error("[ADMIN] Subscriptions fetch error:", err);
+        }
     };
 
     const handleToggleStatus = async (userId: number) => {
@@ -135,6 +160,30 @@ const AdminDashboard: React.FC = () => {
     const handleDeleteUser = async (userId: number) => {
         if (window.confirm('Are you sure you want to suspend this user?')) {
             const res = await api.deleteUser(userId);
+            if (res.success) {
+                toast.success(res.message);
+                fetchDashboardData(true);
+            } else {
+                toast.error(res.message);
+            }
+        }
+    };
+
+    const handleAcceptSubscription = async (id: number) => {
+        if (window.confirm('Are you sure you want to approve this subscription? An email will be sent to the user immediately.')) {
+            const res = await api.acceptSubscription(id);
+            if (res.success) {
+                toast.success(res.message);
+                fetchDashboardData(true);
+            } else {
+                toast.error(res.message);
+            }
+        }
+    };
+
+    const handleRejectSubscription = async (id: number) => {
+        if (window.confirm('Are you sure you want to reject this subscription? An email will be sent to the user.')) {
+            const res = await api.rejectSubscription(id);
             if (res.success) {
                 toast.success(res.message);
                 fetchDashboardData(true);
@@ -231,13 +280,13 @@ const AdminDashboard: React.FC = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="h-100 bg-dark text-white border-secondary shadow-sm">
+                <Col md={3} onClick={() => setActiveTab('subscriptions')} style={{ cursor: 'pointer' }}>
+                    <Card className={`h-100 bg-dark text-white shadow-sm ${activeTab === 'subscriptions' ? 'border-info' : 'border-secondary'}`}>
                         <Card.Body className="d-flex align-items-center p-3">
-                            <div className="bg-danger p-2 rounded-3 me-3">
+                            <div className="bg-info p-2 rounded-3 me-3 text-dark">
                                 <FaUserShield size={20} />
                             </div>
-                            <h6 className="mb-0 fw-bold text-success">Secure</h6>
+                            <h6 className="mb-0 fw-bold text-info">Subscriptions: {subscriptions.length}</h6>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -247,7 +296,7 @@ const AdminDashboard: React.FC = () => {
             <Card className="bg-dark text-white border-secondary shadow-sm">
                 <Card.Header className="bg-transparent border-secondary py-3">
                     <h5 className="mb-0 fw-bold">
-                        {activeTab === 'users' ? 'User Management' : activeTab === 'events' ? 'Event Details' : 'Ticket Sales (Bookings)'}
+                        {activeTab === 'users' ? 'User Management' : activeTab === 'events' ? 'Event Details' : activeTab === 'subscriptions' ? 'Subscription Requests' : 'Ticket Sales (Bookings)'}
                     </h5>
                 </Card.Header>
                 <Card.Body className="p-0">
@@ -283,9 +332,13 @@ const AdminDashboard: React.FC = () => {
                                                 </Badge>
                                             </td>
                                             <td>
-                                                <Badge bg={user.is_active ? 'success' : 'secondary'} className="rounded-pill">
-                                                    {user.is_active ? 'Active' : 'Suspended'}
-                                                </Badge>
+                                                {user.deleted_at ? (
+                                                    <Badge bg="danger" className="rounded-pill">Suspended (Deleted)</Badge>
+                                                ) : (
+                                                    <Badge bg={user.is_active ? 'success' : 'secondary'} className="rounded-pill">
+                                                        {user.is_active ? 'Active' : 'Deactivated'}
+                                                    </Badge>
+                                                )}
                                             </td>
                                             <td>
                                                 <small className="text-red">
@@ -298,7 +351,8 @@ const AdminDashboard: React.FC = () => {
                                                         variant="outline-info"
                                                         size="sm"
                                                         onClick={() => handleToggleStatus(user.id)}
-                                                        title={user.is_active ? 'Suspend User' : 'Activate User'}
+                                                        disabled={!!user.deleted_at}
+                                                        title={user.deleted_at ? "Cannot deactivate deleted user" : (user.is_active ? 'Deactivate User' : 'Activate User')}
                                                     >
                                                         <FaPowerOff />
                                                     </Button>
@@ -306,8 +360,8 @@ const AdminDashboard: React.FC = () => {
                                                         variant="outline-danger"
                                                         size="sm"
                                                         onClick={() => handleDeleteUser(user.id)}
-                                                        disabled={user.role === 'admin'}
-                                                        title="Delete User"
+                                                        disabled={user.role === 'admin' || !!user.deleted_at}
+                                                        title={user.deleted_at ? "Already Suspended" : "Suspend User"}
                                                     >
                                                         <FaTrash />
                                                     </Button>
@@ -402,6 +456,60 @@ const AdminDashboard: React.FC = () => {
                                     {bookings.length === 0 && (
                                         <tr>
                                             <td colSpan={7} className="text-center py-4 text-muted">No tickets booked yet</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </>
+                        )}
+
+                        {activeTab === 'subscriptions' && (
+                            <>
+                                <thead className="bg-secondary bg-opacity-10 text-muted">
+                                    <tr>
+                                        <th className="ps-4">Sub ID</th>
+                                        <th>User Email</th>
+                                        <th>Trx ID</th>
+                                        <th>Method</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th className="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {subscriptions?.map((sub) => (
+                                        <tr key={sub.id} className="align-middle border-secondary border-opacity-25">
+                                            <td className="ps-4 fw-bold text-white">#{sub.id}</td>
+                                            <td>
+                                                <a href={`mailto:${sub.email}`} className="text-red text-decoration-none fw-bold">
+                                                    {sub.email}
+                                                </a>
+                                            </td>
+                                            <td className="text-info fw-bold">{sub.transaction_id}</td>
+                                            <td><Badge bg="secondary">{sub.payment_method}</Badge></td>
+                                            <td className="text-muted"><small>{new Date(sub.created_at).toLocaleDateString()}</small></td>
+                                            <td>
+                                                <Badge bg={sub.status === 'active' ? 'success' : sub.status === 'rejected' ? 'danger' : 'warning'}>
+                                                    {sub.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="text-center pe-4">
+                                                {sub.status === 'pending' && (
+                                                    <div className="d-flex justify-content-center gap-2">
+                                                        <Button variant="outline-success" size="sm" onClick={() => handleAcceptSubscription(sub.id)}>
+                                                            Accept
+                                                        </Button>
+                                                        <Button variant="outline-danger" size="sm" onClick={() => handleRejectSubscription(sub.id)}>
+                                                            Reject
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                                {sub.status !== 'pending' && <span className="text-muted small">Processed</span>}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {subscriptions.length === 0 && (
+                                        <tr>
+                                            <td colSpan={7} className="text-center py-4 text-muted">No subscription requests</td>
                                         </tr>
                                     )}
                                 </tbody>

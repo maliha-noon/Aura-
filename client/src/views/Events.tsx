@@ -287,7 +287,7 @@ const Events: React.FC = () => {
                 </Row>
             </Container>
 
-            {selectedEvent && (
+            {showBookingModal && selectedEvent && (
                 <PaymentModal
                     show={showBookingModal}
                     onHide={() => setShowBookingModal(false)}

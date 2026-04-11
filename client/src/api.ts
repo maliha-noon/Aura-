@@ -34,7 +34,7 @@ class ApiClient {
       return { success: true, ...response.data };
     } catch (error: any) {
       console.error(error);
-      let message = error.response?.data?.message || error.message || 'Login failed';
+      let message = error.response?.data?.message || error.response?.data?.error || error.message || 'Login failed';
       if (error.response?.status === 429) {
         message = 'Too many attempts. Please wait 1 minute.';
       }
@@ -54,7 +54,7 @@ class ApiClient {
       return { success: true, ...response.data };
     } catch (error: any) {
       console.error(error);
-      let message = error.response?.data?.message || error.message || 'Registration failed';
+      let message = error.response?.data?.message || error.response?.data?.error || error.message || 'Registration failed';
 
       if (error.response?.status === 429) {
         message = 'Too many attempts. Please wait 1 minute before trying again.';
@@ -96,7 +96,7 @@ class ApiClient {
       return { success: true, ...response.data };
     } catch (error: any) {
       console.error(error);
-      let message = error.response?.data?.message || error.message || 'Google Login failed';
+      let message = error.response?.data?.message || error.response?.data?.error || error.message || 'Google Login failed';
       if (error.response?.status === 429) {
         message = 'Too many attempts. Please wait 1 minute.';
       }
@@ -164,6 +164,36 @@ class ApiClient {
     }
   }
 
+  async getAdminSubscriptions() {
+    try {
+      const response = await this.client.get('/api/admin/subscriptions');
+      return { success: true, subscriptions: response.data.subscriptions };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: 'Failed to fetch subscriptions' };
+    }
+  }
+
+  async acceptSubscription(id: number) {
+    try {
+      const response = await this.client.post(`/api/admin/subscriptions/${id}/accept`);
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to accept subscription' };
+    }
+  }
+
+  async rejectSubscription(id: number) {
+    try {
+      const response = await this.client.post(`/api/admin/subscriptions/${id}/reject`);
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to reject subscription' };
+    }
+  }
+
   async getAdminUsers() {
     try {
       const response = await this.client.get('/api/admin/users');
@@ -180,7 +210,7 @@ class ApiClient {
       return { success: true, message: response.data.message };
     } catch (error: any) {
       console.error(error);
-      return { success: false, message: 'Failed to update user' };
+      return { success: false, message: error.response?.data?.message || 'Failed to update user' };
     }
   }
 
@@ -190,7 +220,7 @@ class ApiClient {
       return { success: true, message: response.data.message };
     } catch (error: any) {
       console.error(error);
-      return { success: false, message: 'Failed to suspend user' };
+      return { success: false, message: error.response?.data?.message || 'Failed to suspend user' };
     }
   }
 
@@ -280,6 +310,34 @@ class ApiClient {
     } catch (error: any) {
       console.error(error);
       return { success: false, message: 'Failed to fetch subscribers' };
+    }
+  }
+
+  async getNotifications() {
+    try {
+      const response = await this.client.get('/api/notifications');
+      return { success: true, notifications: response.data.notifications, unread_count: response.data.unread_count };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, notifications: [], unread_count: 0 };
+    }
+  }
+
+  async markNotificationRead(id: number) {
+    try {
+      await this.client.post(`/api/notifications/${id}/read`);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false };
+    }
+  }
+
+  async markAllNotificationsRead() {
+    try {
+      await this.client.post('/api/notifications/read-all');
+      return { success: true };
+    } catch (error: any) {
+      return { success: false };
     }
   }
 
