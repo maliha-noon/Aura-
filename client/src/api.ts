@@ -265,6 +265,36 @@ class ApiClient {
     }
   }
 
+  async acceptBooking(id: number) {
+    try {
+      const response = await this.client.post(`/api/admin/bookings/${id}/accept`);
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to accept booking' };
+    }
+  }
+
+  async rejectBooking(id: number) {
+    try {
+      const response = await this.client.post(`/api/admin/bookings/${id}/reject`);
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to reject booking' };
+    }
+  }
+
+  async getCreatorStats() {
+    try {
+      const response = await this.client.get('/api/creator-stats');
+      return { success: true, tickets_sold: response.data.tickets_sold };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.response?.data?.message || 'Failed to fetch creator stats' };
+    }
+  }
+
   async subscribe(data: any) {
     try {
       const response = await this.client.post('/api/subscribe', data);
@@ -290,6 +320,16 @@ class ApiClient {
     } catch (error: any) {
       console.error(error);
       return { success: false, message: 'Failed to fetch bookings' };
+    }
+  }
+
+  async getUser() {
+    try {
+      const response = await this.client.get('/api/user');
+      return { success: true, user: response.data };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false };
     }
   }
 

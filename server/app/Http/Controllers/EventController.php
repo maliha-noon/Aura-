@@ -29,6 +29,7 @@ class EventController extends Controller
             'price' => 'required|numeric|min:0',
             'capacity' => 'required|integer|min:1',
             'category' => 'nullable|string|max:100',
+            'city_country' => 'required|string|max:255',
             'is_featured' => 'nullable|boolean',
         ]);
 
@@ -39,6 +40,19 @@ class EventController extends Controller
         $data = $request->all();
         $data['user_id'] = auth()->id();
         $event = Event::create($data);
+
+        // Notify Admins
+        $user = auth()->user();
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            if ($user && $admin->id === $user->id) continue;
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'title'   => '🔔 New Event Created',
+                'message' => 'A new event "' . $event->title . '" has been created by ' . ($user ? $user->name : 'Unknown'),
+                'type'    => 'info',
+            ]);
+        }
 
         return response()->json([
             'success' => true,
