@@ -12,7 +12,7 @@ class EventFactory extends Factory
 
     public function definition()
     {
-        $categories = ['Concert', 'Tech', 'Comic', 'Entertainment', 'Sports', 'Cultural', 'Business', 'Art', 'Gaming', 'Music'];
+        $categories = ['Concert', 'Tech', 'Comic', 'Entertainment', 'Sports', 'Cultural', 'Business'];
         $locations = [
             ['location' => 'ICCB Arena', 'city_country' => 'Dhaka, Bangladesh'],
             ['location' => 'Army Stadium', 'city_country' => 'Dhaka, Bangladesh'],
@@ -20,11 +20,9 @@ class EventFactory extends Factory
             ['location' => 'International Convention City Bashundhara', 'city_country' => 'Dhaka, Bangladesh'],
             ['location' => 'Radisson Blu Dhaka', 'city_country' => 'Dhaka, Bangladesh'],
             ['location' => 'National Museum Auditorium', 'city_country' => 'Dhaka, Bangladesh'],
-            ['location' => 'BICC', 'city_country' => 'Dhaka, Bangladesh'],
-            ['location' => 'Shilpakala Academy', 'city_country' => 'Dhaka, Bangladesh'],
         ];
         $venue = $this->faker->randomElement($locations);
-        $guestNames = ['Linus Torvalds', 'Dan Abramov', 'A.R. Rahman', 'Kevin Hart', 'Vitalik Buterin', 'Zakir Hussain', 'Elon Musk', 'Sam Altman', 'Atif Aslam'];
+        $guestNames = ['Linus Torvalds', 'Dan Abramov', 'A.R. Rahman', 'Kevin Hart', 'Vitalik Buterin', 'Zakir Hussain'];
         $images = [
             'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&auto=format&fit=crop',
             'https://images.unsplash.com/photo-1470229722913-7c090be5bc65?w=800&auto=format&fit=crop',

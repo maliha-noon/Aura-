@@ -1,0 +1,159 @@
+name: CI Pipeline
+
+# Triggers: runs on every push and on pull requests targeting main
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 1: Frontend — ESLint check + TypeScript compile + Vite build
+  # ──────────────────────────────────────────────────────────────
+  frontend:
+    name: 🎨 Frontend (React + TypeScript + Vite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: client
+        run: npm run lint
+
+      - name: Build (TypeScript + Vite)
+        working-directory: client
+        run: npm run build
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 2: Backend — Composer install + Migrations + PHPUnit tests
+  # ──────────────────────────────────────────────────────────────
+  backend:
+    name: 🔧 Backend (Laravel 8 + PHP 8.3 + MySQL 8)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: aura_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, exif, pcntl, bcmath, gd, xml, zip
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: server/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('server/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        working-directory: server
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare .env for testing
+        working-directory: server
+        run: |
+          cp .env.example .env
+          sed -i 's|DB_DATABASE=aura|DB_DATABASE=aura_test|' .env
+          sed -i 's|DB_PASSWORD=|DB_PASSWORD=secret|' .env
+
+      - name: Generate application key
+        working-directory: server
+        run: php artisan key:generate
+
+      - name: Run database migrations
+        working-directory: server
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: aura_test
+          DB_USERNAME: root
+          DB_PASSWORD: secret
+          APP_ENV: testing
+        run: php artisan migrate --force
+
+      - name: Run PHPUnit tests
+        working-directory: server
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: aura_test
+          DB_USERNAME: root
+          DB_PASSWORD: secret
+          APP_ENV: testing
+          CACHE_DRIVER: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          MAIL_MAILER: array
+        run: php artisan test --verbose
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 3: Docker — Build the image (only runs if Jobs 1 & 2 pass)
+  # ──────────────────────────────────────────────────────────────
+  docker-build:
+    name: 🐳 Docker Image Build
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        working-directory: .
+        run: |
+          docker build \
+            --build-arg APP_NAME=Aura \
+            --build-arg APP_ENV=testing \
+            --build-arg APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= \
+            --build-arg APP_DEBUG=false \
+            --build-arg APP_URL=http://localhost \
+            --build-arg FRONTEND_URL=http://localhost \
+            --build-arg LOG_LEVEL=debug \
+            --build-arg DB_CONNECTION=mysql \
+            --build-arg DB_HOST=db \
+            --build-arg DB_PORT=3306 \
+            --build-arg DB_DATABASE=aura \
+            --build-arg DB_USERNAME=root \
+            --build-arg DB_PASSWORD=secret \
+            --build-arg VITE_BACKEND_ENDPOINT=http://localhost \
+            -t aura-app:ci \
+            .

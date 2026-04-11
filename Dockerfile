@@ -1,5 +1,5 @@
 # Use an official PHP image with Apache
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 # ENV Arguments 
 ARG APP_NAME
@@ -25,42 +25,49 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
     nodejs \
-    npm
-
-# Enable mod_rewrite
-RUN a2enmod rewrite
-
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    npm && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    npm config set fetch-retry-maxtimeout 600000 && \
+    npm config set fetch-retries 5
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd xml zip
 
-# By default, Apache serves files from /var/www/html.
-# Laravel expects the document root to point to the public directory of its project structure for proper routing and security.
-# These commands update Apache’s configuration so that it serves files from /var/www/html/public instead, aligning it with Laravel's structure.
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+# Provide clean, perfect Apache VirtualHost configuration
+COPY server/docker/000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY server/docker/standard.htaccess /var/www/html/public/.htaccess
+RUN a2enmod rewrite
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy the application code to the html folder
-# COPY . /var/www/html
-
-# Copy Laravel backend code
 COPY server/ /var/www/html
-COPY client/ /var/www/html/client
+
+# Optimize Client Build: Copy package files first to leverage Docker cache
+WORKDIR /var/www/html/client
+COPY client/package*.json ./
+RUN npm install --no-audit --no-fund || npm install --no-audit --no-fund
+
+# Copy the rest of the client source
+COPY client/ ./
+RUN npm run build
+
+# Set working directory back to server root
+WORKDIR /var/www/html
 
 # Set working directory
 WORKDIR /var/www/html
 
 # Install Laravel dependencies
-RUN composer install
+# Using composer update as a last resort if install fails due to lock/env mismatch
+RUN composer install --no-interaction --optimize-autoloader || \
+    composer update --no-interaction --optimize-autoloader || \
+    composer install --no-interaction --optimize-autoloader --ignore-platform-reqs=php
 
 # Set environment variables for server
 RUN touch .env
@@ -73,8 +80,8 @@ RUN echo "APP_NAME=${APP_NAME}" >> .env && \
     echo "DB_CONNECTION=${DB_CONNECTION}" >> .env && \
     echo "DB_HOST=${DB_HOST}" >> .env && \
     echo "DB_DATABASE=${DB_DATABASE}" >> .env && \
-    echo "DB_DATABASE=${DB_USERNAME}" >> .env && \
-    echo "DB_DATABASE=${DB_PASSWORD}" >> .env && \
+    echo "DB_USERNAME=${DB_USERNAME}" >> .env && \
+    echo "DB_PASSWORD=${DB_PASSWORD}" >> .env && \
     echo "DB_PORT=${DB_PORT}" >> .env
 
 # Set permissions for Laravel storage and cache
@@ -83,9 +90,7 @@ RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html/stora
 # RUN ls -a
 # RUN echo "hello wrld"
 
-RUN cd client && npm install && npm run build
-
-# # Move React build to Laravel public directory
+# Move React build to Laravel public directory
 RUN cp -r client/dist/* public/
 
 # # Expose port 80 for Apache

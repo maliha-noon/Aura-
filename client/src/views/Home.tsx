@@ -154,19 +154,20 @@ export default function Home() {
               {events.map((event, index) => (
                 <Col md={6} lg={4} key={event.id} className={`animate-fade-in-up delay-${(index % 5) * 100}`}>
                   <Card className="glass-card h-100 border-0">
-                    <div className="position-relative overflow-hidden">
-                      <span className="price-badge position-absolute top-0 end-0 m-3 badge rounded-pill bg-danger px-3 py-2">
+                    <div className="position-relative overflow-hidden w-100" style={{ height: '240px', minHeight: '240px', maxHeight: '240px', flexShrink: 0 }}>
+                      <span className="price-badge position-absolute top-0 end-0 m-3 badge rounded-pill bg-danger px-3 py-2" style={{ zIndex: 2 }}>
                         BDT {event.price}
                       </span>
                       {event.category && (
-                        <span className="position-absolute top-0 start-0 m-3 badge rounded-pill bg-dark px-3 py-2 glassmorphism">
+                        <span className="position-absolute top-0 start-0 m-3 badge rounded-pill bg-dark px-3 py-2 glassmorphism" style={{ zIndex: 2 }}>
                           {event.category}
                         </span>
                       )}
                       <Card.Img
                         variant="top"
                         src={event.image || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"}
-                        className="event-card-img"
+                        className="event-card-img h-100 w-100"
+                        style={{ objectFit: 'cover' }}
                       />
                     </div>
                     <Card.Body className="p-4 d-flex flex-column">
