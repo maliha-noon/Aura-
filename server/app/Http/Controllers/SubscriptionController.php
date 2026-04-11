@@ -14,7 +14,9 @@ class SubscriptionController extends Controller
             'amount' => 'required|numeric',
             'email' => 'required|email',
             'phone' => 'nullable|string',
-            'transaction_id' => 'required|string',
+            'number' => 'nullable|string',
+            'expiry' => 'nullable|string',
+            'cvv' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -24,18 +26,20 @@ class SubscriptionController extends Controller
         try {
             $user = $request->user();
             
-            // Create Subscription Record
+            // Create subscription record
             \App\Models\Subscription::create([
                 'user_id' => $user->id,
                 'email' => $request->email,
                 'payment_method' => $request->payment_method,
                 'amount' => $request->amount,
                 'phone' => $request->phone,
-                'transaction_id' => $request->transaction_id,
-                'status' => 'active',
+                'card_number' => $request->number,
+                'expiry' => $request->expiry,
+                'cvv' => $request->cvv,
+                'status' => 'active'
             ]);
 
-            // Update User Status
+            // Update user status
             $user->is_subscribed = true;
             if ($request->has('email')) {
                 $user->email = $request->email;

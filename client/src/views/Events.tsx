@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Button, Container, Badge, Modal, Pagination } from 'react-bootstrap';
-import { FiMapPin, FiCalendar, FiClock, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { Row, Col, Card, Button, Container, Badge, Modal } from 'react-bootstrap';
+import { FiMapPin, FiCalendar, FiClock, FiDollarSign } from 'react-icons/fi';
 import ApiClient from '../api';
 import PaymentModal from '../components/PaymentModal';
 import toast from 'react-hot-toast';
@@ -24,26 +24,30 @@ interface Event {
 const Events: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [lastPage, setLastPage] = useState(1);
     const [bookingCount, setBookingCount] = useState(0);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [showBookingModal, setShowBookingModal] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [activeCategory, setActiveCategory] = useState<string>('All');
     const { user, isAdmin } = useAuth();
     const navigate = useNavigate();
     const api = React.useMemo(() => new ApiClient(), []);
 
-    const fetchEvents = React.useCallback(async (page: number = 1) => {
-        setLoading(true);
+    const categories = React.useMemo(() => {
+        const cats = ['All', ...Array.from(new Set(events.map(e => e.category).filter(Boolean)))];
+        return cats;
+    }, [events]);
+
+    const filteredEvents = React.useMemo(() => {
+        if (activeCategory === 'All') return events;
+        return events.filter(e => e.category === activeCategory);
+    }, [events, activeCategory]);
+
+    const fetchEvents = React.useCallback(async () => {
         try {
-            const response = await api.getEvents(page);
+            const response = await api.getEvents();
             if (response.success) {
-                setEvents(response.events || []);
-                if (response.pagination) {
-                    setCurrentPage(response.pagination.current_page);
-                    setLastPage(response.pagination.last_page);
-                }
+                setEvents(response.events);
             } else {
                 toast.error(response.message || 'Failed to fetch events');
             }
@@ -55,7 +59,7 @@ const Events: React.FC = () => {
     }, [api]);
 
     useEffect(() => {
-        fetchEvents(currentPage);
+        fetchEvents();
         const fetchMyBookings = async () => {
             if (user) {
                 const response = await api.getMyBookings();
@@ -65,7 +69,7 @@ const Events: React.FC = () => {
             }
         };
         fetchMyBookings();
-    }, [fetchEvents, api, user, currentPage]);
+    }, [fetchEvents, api, user]);
 
     const DigitalClock = () => {
         const [time, setTime] = React.useState(new Date());
@@ -147,24 +151,39 @@ const Events: React.FC = () => {
                         `}
                     </style>
 
+                    <audio src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3" autoPlay loop style={{ display: 'none' }}></audio>
 
-                    <div className="d-flex justify-content-center mt-3">
-                        {(isAdmin || user?.is_subscribed) && (
-                            <Button
-                                variant="danger"
-                                className="btn-premium px-4 py-2"
-                                style={{ boxShadow: '0 5px 15px rgba(220,53,69,0.4)' }}
-                                onClick={() => navigate('/add-event')}
-                            >
-                                + ADD NEW EVENT
-                            </Button>
-                        )}
-                    </div>
+                    {(isAdmin || user?.is_subscribed) && (
+                        <Button
+                            variant="danger"
+                            className="btn-premium px-4 py-2 mt-3"
+                            style={{ boxShadow: '0 5px 15px rgba(220,53,69,0.4)' }}
+                            onClick={() => navigate('/add-event')}
+                        >
+                            + ADD NEW TICKET
+                        </Button>
+                    )}
+                </div>
+
+                {/* Category Filter */}
+                <div className="d-flex flex-wrap justify-content-center gap-2 mb-5">
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveCategory(cat)}
+                            className={`btn btn-sm rounded-pill px-4 fw-bold ${
+                                activeCategory === cat ? 'btn-danger' : 'btn-outline-secondary text-white'
+                            }`}
+                            style={{ transition: 'all 0.2s' }}
+                        >
+                            {cat}
+                        </button>
+                    ))}
                 </div>
 
                 <Row className="g-4">
-                    {events.length > 0 ? (
-                        events.map((event) => (
+                    {filteredEvents.length > 0 ? (
+                        filteredEvents.map((event) => (
                             <Col key={event.id} lg={4} md={6}>
                                 <Card
                                     className="h-100 bg-dark text-white border-0 overflow-hidden"
@@ -261,71 +280,11 @@ const Events: React.FC = () => {
                         ))
                     ) : (
                         <Col className="text-center py-5">
-                            <h3 className="text-muted">No events found</h3>
+                            <h3 className="text-muted">No events found for "{activeCategory}"</h3>
+                            <p className="text-secondary">Try selecting a different category above.</p>
                         </Col>
                     )}
                 </Row>
-
-                {lastPage > 1 && (
-                    <div className="d-flex justify-content-center mt-5">
-                        <Pagination className="premium-pagination">
-                            <Pagination.Prev 
-                                disabled={currentPage === 1} 
-                                onClick={() => setCurrentPage(prev => prev - 1)}
-                            >
-                                <FiChevronLeft className="me-1" /> Previous
-                            </Pagination.Prev>
-                            
-                            {[...Array(lastPage)].map((_, idx) => (
-                                <Pagination.Item
-                                    key={idx + 1}
-                                    active={idx + 1 === currentPage}
-                                    onClick={() => setCurrentPage(idx + 1)}
-                                >
-                                    {idx + 1}
-                                </Pagination.Item>
-                            ))}
-
-                            <Pagination.Next 
-                                disabled={currentPage === lastPage}
-                                onClick={() => setCurrentPage(prev => prev + 1)}
-                            >
-                                Next <FiChevronRight className="ms-1" />
-                            </Pagination.Next>
-                        </Pagination>
-
-                        <style>
-                            {`
-                            .premium-pagination .page-link {
-                                background: #1a1a1a;
-                                border: 1px solid #333;
-                                color: #fff;
-                                padding: 10px 20px;
-                                margin: 0 5px;
-                                border-radius: 8px;
-                                transition: all 0.3s ease;
-                                font-weight: 600;
-                            }
-                            .premium-pagination .page-item.active .page-link {
-                                background: #dc3545;
-                                border-color: #dc3545;
-                                color: #fff;
-                                box-shadow: 0 5px 15px rgba(220,53,69,0.4);
-                            }
-                            .premium-pagination .page-link:hover {
-                                background: #2d2d2d;
-                                border-color: #dc3545;
-                                color: #dc3545;
-                            }
-                            .premium-pagination .page-item.disabled .page-link {
-                                background: #111;
-                                border-color: #222;
-                                color: #444;
-                            }
-                            `}
-                        </style>
-                    </div>
-                )}
             </Container>
 
             {selectedEvent && (
